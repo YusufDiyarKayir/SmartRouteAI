@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartRouteAI - Harita</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+   body {
+    background: linear-gradient(to bottom right, #1e1e2f, #2e2e3f);
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    color: #2a3d66;
+    margin: 0;
+    padding: 0;
+}
+
+
+h2 {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 2rem;
+    color: white;
+}
+
+#map {
+    height: 70vh;
+    width: 100%;
+    max-width: 900px;
+    margin: 2rem auto;
+    border-radius: 1.25rem;
+    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.1);
+}
+
+.coords {
+    max-width: 900px;
+    margin: 1rem auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.coords label {
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.coords label::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #2a3d66;
+    bottom: 0;
+    left: 0;
+    transition: width 0.3s ease-in-out;
+}
+
+.coords label:hover::after {
+    width: 100%;
+}
+
+.coords select,
+#params-form input[type="date"],
+#params-form input[type="time"] {
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #bfc8e6;
+    background-color: #f8fafd;
+    font-size: 1rem;
+    transition: border 0.3s ease;
+}
+
+.coords select:focus,
+#params-form input[type="date"]:focus,
+#params-form input[type="time"]:focus {
+    border: 2px solid #2a3d66;
+    outline: none;
+    background-color: #fff;
+}
+
+#params-form label {
+    margin: 0.5rem 1rem;
+    font-size: 1.1rem;
+}
+
+#params-form button {
+    background-color: #2a3d66;
+    color: #fff;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.7rem 1.5rem;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+#params-form button:hover {
+    background-color: #1a2540;
+}
+
+#reset-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    margin: 1rem auto;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+#reset-btn:hover {
+    background-color: #c0392b;
+}
+
+#result {
+    background-color: #fff;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    color: #2a3d66;
+    text-align: center;
+    max-width: 900px;
+    margin: 1rem auto;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+#route-options {
+    max-width: 900px;
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.route-card {
+    background-color: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+
+.route-card:hover {
+    transform: scale(1.02);
+}
+
+.route-title {
+    font-weight: bold;
+    color: #2a3d66;
+}
+
+.route-info {
+    color: #3a4a6a;
+}
+
+.route-toll {
+    background-color: #e0e6f0;
+    color: #2a3d66;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.95rem;
+}
+
+.route-details-card {
+    background-color: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 1rem rgba(60, 60, 100, 0.1);
+    padding: 1.5rem;
+    font-size: 1.1rem;
+    color: #2a3d66;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.route-details-card div {
+    min-width: 180px;
+}
+
+.weather-main {
+    font-weight: bold;
+    color: #1a2540;
+}
+
+.weather-impact {
+    color: #e74c3c;
+    font-weight: bold;
+    font-style: italic;
+}
+
+#preset-routes {
+    background-color: #f8fafd;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.07);
+    padding: 1rem 1.5rem;
+    max-width: 320px;
+    margin: 2rem 0;
+}
+
+.preset-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2a3d66;
+    margin-bottom: 0.75rem;
+}
+
+.preset-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.preset-btn {
+    background-color: #2a3d66;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.preset-btn:hover {
+    background-color: #1a2540;
+    transform: scale(1.04);
+}
+
+#main-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+    #main-layout {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #preset-routes, #map {
+        max-width: 98vw;
+        margin: 1rem auto;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <h2>SmartRouteAI - Prompt ile Rota Oluştur</h2>
+    <div id="prompt-section" style="max-width:900px;margin:2em auto 1em auto;padding:1.5em 2em;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:1em;">
+        <label for="prompt-input" style="font-size:1.15em;font-weight:bold;">Promptunuzu girin:</label>
+        <textarea id="prompt-input" rows="2" placeholder="Örn: İstanbul'dan Antalya'ya Aralık ayında gitmek istiyorum" style="font-size:1.25em;padding:1.1em 1em;border-radius:14px;border:1.5px solid #bfc8e6;resize:vertical;min-height:3.5em;box-shadow:0 1px 6px rgba(60,60,100,0.07);transition: border 0.3s, box-shadow 0.3s;outline:none;background:#f8fafd;line-height:1.5;"></textarea>
+        <div style="margin-top:0.5em;font-size:0.9em;color:#666;">
+            <strong>Örnek promptlar:</strong><br>
+            • "İstanbul'dan Antalya'ya Aralık ayında gitmek istiyorum"<br>
+            • "Ocak ayında İstanbul Kars Antalya rotası"<br>
+            • "Haziran'da İzmir'den Ankara'ya yolculuk"
+        </div>
+        <style>
+        #prompt-input:focus {
+            border: 2px solid #2a3d66;
+            box-shadow: 0 2px 12px 0 rgba(60,60,100,0.13);
+            background: #fff;
+        }
+        #prompt-input::placeholder {
+            color: #b0b0b0;
+            font-style: italic;
+            opacity: 1;
+        }
+        </style>
+        <div style="display:flex;gap:1em;align-items:center;">
+            <button id="route-weather-btn" style="background:#2a3d66;color:#fff;border:none;border-radius:8px;padding:0.7em 1.5em;font-size:1.1em;cursor:pointer;box-shadow:0 2px 8px 0 rgba(60,60,100,0.10);">🚗 Rota Oluştur ve Hava Durumu Analiz Et</button>
+        </div>
+        <div id="prompt-result" style="margin-top:1em;font-size:1.1em;"></div>
+        <div id="weather-result" style="margin-top:1em;font-size:1.1em;display:none;background:#f0f8ff;padding:1em;border-radius:8px;border-left:4px solid #4CAF50;"></div>
+    </div>
+    <div id="main-layout">
+        <div id="map"></div>
+    </div>
+    <div class="coords">
+        <label>Başlangıç:
+            <select id="from-place">
+                <option value="">Haritadan seç</option>
+                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+            </select>
+            <span id="from-coord">Seçilmedi</span>
+        </label>
+        <label>Hedef:
+            <select id="to-place">
+                <option value="">Haritadan seç</option>
+                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+            </select>
+            <span id="to-coord">Seçilmedi</span>
+        </label>
+        <label>Tarih:
+            <input type="date" id="date-input" style="margin-left:0.5em;">
+        </label>
+        <label>Saat:
+            <input type="time" id="time-input" style="margin-left:0.5em;">
+        </label>
+    </div>
+    <button id="route-btn" style="display:block;margin:1em auto 1em auto;padding:0.7em 1.5em;font-size:1.1em;background:#2a3d66;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px 0 rgba(60,60,100,0.10);">Rotayı Hesapla</button>
+    <div id="result" style="font-weight:bold;"></div>
+    <div id="route-options" style="max-width:900px;margin:1em auto 0 auto;"></div>
+    <div id="route-details" style="max-width:900px;margin:1em auto 0 auto;"></div>
+    <button id="reset-btn">Seçimleri Sıfırla</button>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Polyline decode (Google polyline formatı) - Sadeleştirilmiş versiyon
+        function decodePolyline(encoded) {
+            if (!encoded || encoded.length === 0) {
+                console.warn('Empty polyline data');
+                return [];
+            }
+            
+            let points = [];
+            let index = 0, len = encoded.length;
+            let lat = 0, lng = 0;
+            
+            try {
+                while (index < len) {
+                    let b, shift = 0, result = 0;
+                    do {
+                        b = encoded.charCodeAt(index++) - 63;
+                        result |= (b & 0x1f) << shift;
+                        shift += 5;
+                    } while (b >= 0x20);
+                    let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                    lat += dlat;
+                    shift = 0;
+                    result = 0;
+                    do {
+                        b = encoded.charCodeAt(index++) - 63;
+                        result |= (b & 0x1f) << shift;
+                        shift += 5;
+                    } while (b >= 0x20);
+                    let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                    lng += dlng;
+                    points.push([lat / 1e5, lng / 1e5]);
+                }
+                
+                console.log(`Decoded ${points.length} points from polyline`);
+                return points;
+            } catch (error) {
+                console.error('Error decoding polyline:', error);
+                return [];
+            }
+        }
+        const map = L.map('map').setView([41.0082, 28.9784], 10); // İstanbul merkezli
+        // Google Maps tile layer kullanarak daha doğru rota çizimi
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '© Google Maps',
+            updateWhenZooming: false,
+            updateWhenIdle: true
+        }).addTo(map);
+
+        let fromMarker = null;
+        let toMarker = null;
+        let fromCoord = null;
+        let toCoord = null;
+        let routeLine = null;
+        let currentRoute = null;
+        let allRoutes = [];
+        let selectedRouteIndex = null;
+
+        function updateCoords() {
+            document.getElementById('from-coord').textContent = fromCoord ? `${fromCoord.lat.toFixed(5)}, ${fromCoord.lng.toFixed(5)}` : 'Seçilmedi';
+            document.getElementById('to-coord').textContent = toCoord ? `${toCoord.lat.toFixed(5)}, ${toCoord.lng.toFixed(5)}` : 'Seçilmedi';
+        }
+
+        function showRouteOptions(routes) {
+            const container = document.getElementById('route-options');
+            container.innerHTML = '';
+            if (!routes || routes.length === 0) return;
+            routes.forEach((route, idx) => {
+                console.log(`[FRONTEND] Route ${idx}:`, route);
+                const div = document.createElement('div');
+                div.className = 'route-card' + (selectedRouteIndex === idx ? ' selected' : '');
+                div.onclick = function() { selectRoute(idx); };
+                div.innerHTML = `<span class="route-title">${route.title}</span>
+                    <span class="route-info">Mesafe: ${route.distanceKm} km</span>
+                    <span class="route-info">Süre: ${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</span>
+                    <span class="route-toll">Otoyol: ${route.tollClass}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        function showRouteDetails(route) {
+            const details = document.getElementById('route-details');
+            if (!route) { details.innerHTML = ''; return; }
+            details.innerHTML = `
+                <div class="route-details-card">
+                    <div><b>Mesafe:</b> ${route.distanceKm} km</div>
+                    <div><b>Süre:</b> ${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</div>
+                    <div><b>Tahmini varış:</b> ${route.arrivalStr || route.arrivalstr || '-'} </div>
+                    <div><b>Beklenen hava:</b> <span class="weather-main">${route.weatherDesc || route.weatherdesc ? (route.weatherDesc || route.weatherdesc).charAt(0).toUpperCase() + (route.weatherDesc || route.weatherdesc).slice(1) : (route.weather || '-')}</span></div>
+                    <div><b>Hava etkisi:</b> <span class="weather-impact">${route.weatherImpact || 'Yok'}</span></div>
+                    <div><b>Otoyol:</b> <span class="route-toll">${route.tollClass}</span></div>
+                    <div><b>Ücretli geçiş:</b> <span class="route-toll">${route.tollInfo || route.tollinfo || '-'}</span></div>
+                </div>
+            `;
+        }
+
+        function selectRoute(idx) {
+            selectedRouteIndex = idx;
+            showRouteOptions(allRoutes);
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            const route = allRoutes[idx];
+            if (route.polyline && route.polyline.length > 0) {
+                const latlngs = decodePolyline(route.polyline);
+                if (latlngs.length > 1) {
+                    routeLine = L.polyline(latlngs, {
+                        color: '#e74c3c', 
+                        weight: 6, 
+                        opacity: 0.95,
+                        smoothFactor: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+                    map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                    updateRouteStyle();
+                } else {
+                    console.warn('Route polyline decoded but insufficient points');
+                }
+            }
+            showRouteDetails(route);
+        }
+
+        // Dropdown seçimleri
+        document.getElementById('from-place').onchange = function() {
+            const val = this.value;
+            if (val) {
+                const [lat, lng] = val.split(',').map(Number);
+                fromCoord = { lat, lng };
+                if (fromMarker) { map.removeLayer(fromMarker); }
+                fromMarker = L.marker([lat, lng], { draggable: true }).addTo(map).bindPopup('Başlangıç').openPopup();
+                fromMarker.on('dragend', function(ev) {
+                    fromCoord = ev.target.getLatLng();
+                    document.getElementById('from-place').value = '';
+                    updateCoords();
+                });
+                map.setView([lat, lng], 12);
+                updateCoords();
+            } else {
+                if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; updateCoords(); }
+            }
+        };
+        document.getElementById('to-place').onchange = function() {
+            const val = this.value;
+            if (val) {
+                const [lat, lng] = val.split(',').map(Number);
+                toCoord = { lat, lng };
+                if (toMarker) { map.removeLayer(toMarker); }
+                toMarker = L.marker([lat, lng], { draggable: true, icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map).bindPopup('Hedef').openPopup();
+                toMarker.on('dragend', function(ev) {
+                    toCoord = ev.target.getLatLng();
+                    document.getElementById('to-place').value = '';
+                    updateCoords();
+                });
+                map.setView([lat, lng], 12);
+                updateCoords();
+            } else {
+                if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; updateCoords(); }
+            }
+        };
+
+        // Haritadan tıklama
+        map.on('click', function(e) {
+            if (!fromMarker) {
+                fromCoord = e.latlng;
+                fromMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup('Başlangıç').openPopup();
+                fromMarker.on('dragend', function(ev) {
+                    fromCoord = ev.target.getLatLng();
+                    document.getElementById('from-place').value = '';
+                    updateCoords();
+                });
+                document.getElementById('from-place').value = '';
+            } else if (!toMarker) {
+                toCoord = e.latlng;
+                toMarker = L.marker(e.latlng, { draggable: true, icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map).bindPopup('Hedef').openPopup();
+                toMarker.on('dragend', function(ev) {
+                    toCoord = ev.target.getLatLng();
+                    document.getElementById('to-place').value = '';
+                    updateCoords();
+                });
+                document.getElementById('to-place').value = '';
+            }
+            updateCoords();
+        });
+
+        document.getElementById('reset-btn').onclick = function() {
+            if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; }
+            if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; }
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            currentRoute = null;
+            updateCoords();
+            document.getElementById('result').textContent = '';
+            document.getElementById('route-details').innerHTML = ''; // Sıfırlama
+        };
+
+        function updateRouteStyle() {
+            if (!routeLine) return;
+            const zoom = map.getZoom();
+            if (zoom < 12) {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 8, 
+                    opacity: 0.9,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            } else if (zoom < 15) {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 6, 
+                    opacity: 0.95,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            } else {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 4, 
+                    opacity: 1.0,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            }
+        }
+        map.on('zoomend', updateRouteStyle);
+
+        document.getElementById('route-btn').onclick = async function() {
+            if (!fromCoord || !toCoord) {
+                alert('Lütfen haritadan veya listeden başlangıç ve hedef seçin!');
+                return;
+            }
+            const date = document.getElementById('date-input').value;
+            const time = document.getElementById('time-input').value;
+            if (!date || !time) {
+                alert('Lütfen tarih ve saat seçin!');
+                return;
+            }
+            const data = {
+                fromLat: fromCoord.lat,
+                fromLng: fromCoord.lng,
+                toLat: toCoord.lat,
+                toLng: toCoord.lng,
+                date,
+                time
+            };
+            console.log('[FRONTEND] Sending route request:', data);
+            document.getElementById('result').textContent = 'Hesaplanıyor...';
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            currentRoute = null;
+            try {
+                const resp = await fetch('http://localhost:5077/route', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await resp.json();
+                if (result.error) {
+                    document.getElementById('result').textContent = 'Hata: ' + result.error;
+                } else if (result.routes && result.routes.length > 0) {
+                    allRoutes = result.routes;
+                    selectedRouteIndex = 0;
+                    showRouteOptions(allRoutes);
+                    document.getElementById('result').textContent = '';
+                    selectRoute(0);
+                } else {
+                    document.getElementById('result').textContent = `Mesafe: ${result.distanceKm} km, Tahmini Süre: ${formatDuration(result.adjustedDurationMin || result.estimatedDurationMinutes)}`;
+                    if (result.polyline) {
+                        const latlngs = decodePolyline(result.polyline);
+                        routeLine = L.polyline(latlngs, {
+                            color: '#e74c3c', 
+                            weight: 6, 
+                            opacity: 0.95,
+                            smoothFactor: 1,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                        map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                        updateRouteStyle();
+                    } else if (result.distanceKm > 0) {
+                        alert('Yol bulundu ama rota çizilemedi. Mesafe: ' + result.distanceKm + ' km');
+                    } else {
+                        alert('Backendden rota verisi gelmedi veya boş. Lütfen farklı bir güzergah deneyin.');
+                    }
+                }
+            } catch (err) {
+                document.getElementById('result').textContent = 'Sunucuya ulaşılamıyor.';
+            }
+        };
+
+        // Eski prompt-btn event listener'ı kaldırıldı - artık route-weather-btn kullanılıyor
+        
+        // Haritada rota gösterme fonksiyonu
+        function showRouteOnMap(polyline) {
+            if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; }
+            if (toMarker) { map.removeLayer(toMarker); toMarker = null; }
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            if (window._cityMarkers) window._cityMarkers.forEach(m => map.removeLayer(m));
+            window._cityMarkers = [];
+            
+            if (polyline && polyline.length > 0) {
+                const latlngs = decodePolyline(polyline);
+                if (latlngs.length > 1) {
+                    routeLine = L.polyline(latlngs, {
+                        color: '#e74c3c', 
+                        weight: 4, 
+                        opacity: 0.9,
+                        smoothFactor: 1
+                    }).addTo(map);
+                    map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                }
+            }
+        }
+        
+        // Şehir merkezleri koordinatları (örnek, Türkiye'nin büyük şehirleri)
+        const cityCenters = {
+            "Adana": [37.0, 35.3213], "Adıyaman": [37.7648, 38.2786], "Afyonkarahisar": [38.7638, 30.5403], "Ağrı": [39.7191, 43.0503], "Amasya": [40.6539, 35.8336], "Ankara": [39.9334, 32.8597], "Antalya": [36.8969, 30.7133], "Artvin": [41.1828, 41.8183], "Aydın": [37.8450, 27.8396], "Balıkesir": [39.6484, 27.8826], "Bilecik": [40.1428, 29.9793], "Bingöl": [39.0626, 40.7696], "Bitlis": [38.4011, 42.1078], "Bolu": [40.5760, 31.5788], "Burdur": [37.7203, 30.2908], "Bursa": [40.1826, 29.0665], "Çanakkale": [40.1553, 26.4142], "Çankırı": [40.6013, 33.6134], "Çorum": [40.5506, 34.9556], "Denizli": [37.7765, 29.0864], "Diyarbakır": [37.9144, 40.2306], "Edirne": [41.6771, 26.5557], "Elazığ": [38.6743, 39.2232], "Erzincan": [39.7500, 39.5000], "Erzurum": [39.9043, 41.2679], "Eskişehir": [39.7767, 30.5206], "Gaziantep": [37.0662, 37.3833], "Giresun": [40.9128, 38.3895], "Gümüşhane": [40.4603, 39.4814], "Hakkari": [37.5744, 43.7408], "Hatay": [36.2021, 36.1600], "Isparta": [37.7648, 30.5566], "Mersin": [36.8121, 34.6415], "İstanbul": [41.0082, 28.9784], "İzmir": [38.4192, 27.1287], "Kars": [40.6013, 43.0975], "Kastamonu": [41.3897, 33.7827], "Kayseri": [38.7312, 35.4787], "Kırklareli": [41.7351, 27.2250], "Kırşehir": [39.1458, 34.1606], "Kocaeli": [40.8533, 29.8815], "Konya": [37.8746, 32.4932], "Kütahya": [39.4242, 29.9833], "Malatya": [38.3552, 38.3095], "Manisa": [38.6191, 27.4289], "Kahramanmaraş": [37.5736, 36.9371], "Mardin": [37.3212, 40.7245], "Muğla": [37.2153, 28.3636], "Muş": [38.9462, 41.7539], "Nevşehir": [38.6244, 34.7236], "Niğde": [37.9667, 34.6833], "Ordu": [40.9847, 37.8789], "Rize": [41.0256, 40.5177], "Sakarya": [40.7569, 30.3781], "Samsun": [41.2867, 36.33], "Siirt": [37.9274, 41.9456], "Sinop": [42.0267, 35.1551], "Sivas": [39.7477, 37.0179], "Tekirdağ": [40.9780, 27.5110], "Tokat": [40.3167, 36.5544], "Trabzon": [41.0015, 39.7178], "Tunceli": [39.1081, 39.5483], "Şanlıurfa": [37.1674, 38.7955], "Uşak": [38.6823, 29.4082], "Van": [38.5019, 43.4167], "Yozgat": [39.8181, 34.8147], "Zonguldak": [41.4564, 31.7987], "Aksaray": [38.3687, 34.0360], "Bayburt": [40.2567, 40.2249], "Karaman": [37.1759, 33.2287], "Kırıkkale": [39.8468, 33.5153], "Batman": [37.8812, 41.1351], "Şırnak": [37.4187, 42.4918], "Bartın": [41.6358, 32.3375], "Ardahan": [41.1105, 42.7022], "Iğdır": [39.9237, 44.0450], "Yalova": [40.6500, 29.2667], "Karabük": [41.2061, 32.6204], "Kilis": [36.7184, 37.1212], "Osmaniye": [37.0742, 36.2478], "Düzce": [40.8438, 31.1565]
+        };
+        // Şehir eşleştirme için normalize edilmiş map
+        const turkishMap = { 'İ':'I', 'ı':'i', 'Ş':'S', 'ş':'s', 'Ğ':'G', 'ğ':'g', 'Ü':'U', 'ü':'u', 'Ö':'O', 'ö':'o', 'Ç':'C', 'ç':'c' };
+        function normalize(str) { return str.replace(/[İıŞşĞğÜüÖöÇç]/g, c => turkishMap[c] || c).toLowerCase(); }
+        const cityCentersMap = {};
+        for (const key in cityCenters) { cityCentersMap[normalize(key)] = key; }
+        const startIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]});
+        const endIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png', iconSize: [32,32], iconAnchor: [16,32]});
+        const waypointIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', iconSize: [28,28], iconAnchor: [14,28]});
+
+        // Enter tuşu ile birleşik rota ve hava durumu analizi
+        const promptInput = document.getElementById('prompt-input');
+        promptInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('route-weather-btn').click();
+            }
+        });
+
+        // Dakikayı "X Saat Y Dakika" formatına çeviren yardımcı fonksiyon
+        function formatDuration(minutes) {
+            if (!minutes || minutes <= 0) return '0 Dakika';
+            
+            // Ondalık kısmı temizle
+            const cleanMinutes = Math.round(minutes);
+            const hours = Math.floor(cleanMinutes / 60);
+            const mins = cleanMinutes % 60;
+            
+            if (hours === 0) {
+                return `${mins} Dakika`;
+            } else if (mins === 0) {
+                return `${hours} Saat`;
+            } else {
+                return `${hours} Saat ${mins} Dakika`;
+            }
+        }
+
+        // Advanced hava durumu analizi fonksiyonu
+        async function analyzeWeatherFromPrompt(prompt) {
+            const weatherResult = document.getElementById('weather-result');
+            weatherResult.style.display = 'block';
+            weatherResult.innerHTML = '<div style="text-align:center;color:#666;">🌤️ Advanced hava durumu analiz ediliyor...</div>';
+            
+            // Tarih analizi
+            const datePatterns = [
+                /(\d{1,2})\s*(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık)/gi,
+                /(\d{1,2})\s*(january|february|march|april|may|june|july|august|september|october|november|december)/gi
+            ];
+            
+            let foundDate = null;
+            let foundCities = [];
+            
+            // Ay haritası
+            const monthMap = {
+                'ocak': 1, 'january': 1, 'şubat': 2, 'february': 2, 'mart': 3, 'march': 3,
+                'nisan': 4, 'april': 4, 'mayıs': 5, 'may': 5, 'haziran': 6, 'june': 6,
+                'temmuz': 7, 'july': 7, 'ağustos': 8, 'august': 8, 'eylül': 9, 'september': 9,
+                'ekim': 10, 'october': 10, 'kasım': 11, 'november': 11, 'aralık': 12, 'december': 12
+            };
+            
+            // Tarih bul
+            for (const pattern of datePatterns) {
+                const match = prompt.match(pattern);
+                if (match) {
+                    for (const monthName in monthMap) {
+                        if (prompt.toLowerCase().includes(monthName)) {
+                            foundDate = {
+                                day: parseInt(match[0].match(/\d+/)[0]),
+                                month: monthMap[monthName],
+                                year: new Date().getFullYear()
+                            };
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            // Şehirleri bul
+            for (const cityName in cityCenters) {
+                if (prompt.toLowerCase().includes(cityName.toLowerCase())) {
+                    foundCities.push(cityName);
+                }
+            }
+            
+            if (foundCities.length === 0) {
+                weatherResult.innerHTML = '<div style="color:#f44336;">❌ Prompt\'ta şehir bulunamadı!</div>';
+                return;
+            }
+            
+            if (!foundDate) {
+                weatherResult.innerHTML = '<div style="color:#f44336;">❌ Prompt\'ta tarih bulunamadı!</div>';
+                return;
+            }
+            
+            // Advanced hava durumu tahmini
+            let weatherAnalysis = '<div style="margin-bottom:1em;"><strong>🌤️ Advanced Hava Durumu Analizi:</strong></div>';
+            
+            // Advanced ML tabanlı tahmin
+            const dateStr = `${foundDate.year}-${foundDate.month.toString().padStart(2, '0')}-${foundDate.day.toString().padStart(2, '0')}`;
+            
+            try {
+                const response = await fetch('http://localhost:5001/predict_route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cities: foundCities,
+                        date: dateStr
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const predictions = data.predictions || [];
+                    
+                    predictions.forEach(prediction => {
+                        const city = prediction.city;
+                        const weather = prediction.predicted_weather;
+                        const temp = Math.round(prediction.predicted_temperature);
+                        const confidence = Math.round(prediction.ml_confidence * 100);
+
+                        
+                        weatherAnalysis += `
+                            <div style="background:#fff;padding:0.8em;margin:0.5em 0;border-radius:6px;border-left:3px solid #4CAF50;">
+                                <strong>🏙️ ${city}:</strong> ${getWeatherIcon(weather)} (${temp}°C) [Güven: %${confidence}]
+                                <br><small style="color:#666;">${prediction.explanation || 'Advanced ML tabanlı tahmin'}</small>
+                            </div>
+                        `;
+                    });
+                                } else {
+                    // Fallback: Basit tahmin
+                    for (const city of foundCities) {
+                        const cityData = cityCenters[city];
+                        const weather = await predictWeather(city, foundDate.month, cityData);
+                        
+                        weatherAnalysis += `
+                            <div style="background:#fff;padding:0.8em;margin:0.5em 0;border-radius:6px;border-left:3px solid #4CAF50;">
+                                <strong>🏙️ ${city}:</strong> ${weather.condition} (${weather.temp}°C) [Güven: %${weather.confidence || 60}]
+                                <br><small style="color:#666;">${weather.description}</small>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Advanced hava durumu servisi hatası:', error);
+                // Fallback: Basit tahmin
+                for (const city of foundCities) {
+                    const cityData = cityCenters[city];
+                    const weather = await predictWeather(city, foundDate.month, cityData);
+                    
+                    weatherAnalysis += `
+                        <div style="background:#fff;padding:0.8em;margin:0.5em 0;border-radius:6px;border-left:3px solid #4CAF50;">
+                            <strong>🏙️ ${city}:</strong> ${weather.condition} (${weather.temp}°C) [Güven: %${weather.confidence || 60}]
+                            <br><small style="color:#666;">${weather.description}</small>
+                        </div>
+                    `;
+                }
+            }
+            
+            weatherResult.innerHTML = weatherAnalysis;
+        }
+        
+        // Advanced hava durumu tahmin fonksiyonu
+        async function predictWeather(city, month, coords) {
+            try {
+                // Advanced hava durumu servisinden veri al
+                const date = new Date();
+                const year = date.getFullYear();
+                const day = Math.floor(Math.random() * 28) + 1; // Rastgele gün
+                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                
+                const response = await fetch('http://localhost:5001/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        city: city,
+                        date: dateStr
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    return {
+                        condition: getWeatherIcon(data.predicted_weather),
+                        temp: Math.round(data.predicted_temperature),
+                        description: data.explanation || 'Advanced ML tabanlı tahmin',
+                        confidence: Math.round(data.ml_confidence * 100)
+                    };
+                } else {
+                    // Fallback: Basit mevsimsel tahmin
+                    return getFallbackWeather(city, month, coords);
+                }
+            } catch (error) {
+                console.error('Advanced hava durumu servisi hatası:', error);
+                // Fallback: Basit mevsimsel tahmin
+                return getFallbackWeather(city, month, coords);
+            }
+        }
+        
+        // Fallback hava durumu tahmin fonksiyonu
+        function getFallbackWeather(city, month, coords) {
+            let condition, temp, description;
+            
+            if (month >= 12 || month <= 2) {
+                // Kış
+                if (coords[0] > 40 || coords[1] > 40) { // Doğu/Kuzey bölgeler
+                    condition = '❄️ Kar';
+                    temp = Math.round(-5 + Math.random() * 10);
+                    description = 'Kış aylarında kar yağışı bekleniyor';
+                } else {
+                    condition = '🌧️ Yağmur';
+                    temp = Math.round(5 + Math.random() * 10);
+                    description = 'Kış aylarında yağmurlu hava';
+                }
+            } else if (month >= 6 && month <= 8) {
+                // Yaz - Kesinlikle kar olmaz
+                condition = '☀️ Güneşli';
+                temp = Math.round(25 + Math.random() * 15);
+                description = 'Yaz aylarında güneşli ve sıcak hava';
+            } else if (month >= 3 && month <= 5) {
+                // İlkbahar
+                if (coords[0] > 40 && Math.random() > 0.7) { // Doğu bölgelerde bazen kar
+                    condition = '❄️ Kar';
+                    temp = Math.round(0 + Math.random() * 10);
+                    description = 'İlkbaharda kar yağışı bekleniyor';
+                } else {
+                    condition = '🌧️ Yağmur';
+                    temp = Math.round(10 + Math.random() * 10);
+                    description = 'İlkbaharda yağmurlu hava';
+                }
+            } else {
+                // Sonbahar
+                if (Math.random() > 0.6) {
+                    condition = '🌧️ Yağmur';
+                    temp = Math.round(10 + Math.random() * 10);
+                    description = 'Sonbaharda yağmurlu hava';
+                } else {
+                    condition = '⛅ Parçalı Bulutlu';
+                    temp = Math.round(15 + Math.random() * 10);
+                    description = 'Sonbaharda değişken hava';
+                }
+            }
+            
+            return { condition, temp, description, confidence: 60 };
+        }
+        
+        // Hava durumu ikonları
+        function getWeatherIcon(weather) {
+            const icons = {
+                'Clear': '☀️ Güneşli',
+                'Clouds': '⛅ Bulutlu',
+                'Rain': '🌧️ Yağmur',
+                'Snow': '❄️ Kar',
+                'Thunderstorm': '⛈️ Fırtına',
+                'Drizzle': '🌦️ Çisenti',
+                'Mist': '🌫️ Sis',
+                'Fog': '🌫️ Sis',
+                'Haze': '🌫️ Pus',
+                'Smoke': '🌫️ Duman',
+                'Dust': '🌫️ Toz',
+                'Sand': '🌫️ Kum',
+                'Ash': '🌫️ Kül',
+                'Squall': '💨 Rüzgar',
+                'Tornado': '🌪️ Kasırga'
+            };
+            return icons[weather] || '🌤️ Bilinmiyor';
+        }
+        
+        // Birleşik rota ve hava durumu analizi butonu
+        document.getElementById('route-weather-btn').addEventListener('click', async function() {
+            const prompt = document.getElementById('prompt-input').value.trim();
+            const promptResult = document.getElementById('prompt-result');
+            const weatherResult = document.getElementById('weather-result');
+            
+            if (!prompt) {
+                promptResult.innerHTML = '<div style="color:#f44336;">❌ Lütfen önce bir prompt girin!</div>';
+                return;
+            }
+            
+            // Her iki sonuç alanını da göster ve yükleniyor mesajı ver
+            promptResult.innerHTML = '<div style="text-align:center;color:#666;">🚗 Rota oluşturuluyor ve hava durumu analiz ediliyor...</div>';
+            weatherResult.style.display = 'block';
+            weatherResult.innerHTML = '<div style="text-align:center;color:#666;">🌤️ ML tabanlı hava durumu tahmini yapılıyor...</div>';
+            
+            try {
+                // Backend'e rota ve hava durumu isteği gönder
+                const resp = await fetch('http://localhost:5077/api/Route/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                if (resp.ok) {
+                    const data = await resp.json();
+                    
+                    // Rota sonuçlarını göster
+                    if (data.alternatives && data.alternatives.length > 0) {
+                        let routeHtml = '<div style="margin-bottom:1em;"><strong>🗺️ Rota Seçenekleri:</strong></div>';
+                        routeHtml += '<div id="alt-routes-list" style="display:flex;flex-direction:column;gap:1em;margin-top:1em;">';
+                        
+                        data.alternatives.forEach((route, index) => {
+                            routeHtml += `
+                                <div class="route-card" id="route-card-${index}" style="padding:1em;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);background:#fff;cursor:pointer;${index===0?'border:2px solid #2a3d66;':''}" onclick="window.selectAltRoute(${index})">
+                                    <strong>Rota ${index + 1}:</strong> ${route.distanceKm} km, ${formatDuration(route.adjustedDurationMin)}
+                                    <br><small style="color:#666;">${route.summary}</small>
+                                    ${route.hasToll ? '<br><span style="color:#f39c12;">💰 Ücretli yol</span>' : ''}
+                                    ${route.weatherImpact ? `<br><span style="color:#e74c3c;">🌤️ ${route.weatherImpact}</span>` : ''}
+                                </div>
+                            `;
+                        });
+                        routeHtml += '</div>';
+                        
+                        promptResult.innerHTML = routeHtml;
+                        
+                        // Global değişkenlere rotaları kaydet
+                        window._promptAlternatives = data.alternatives;
+                        
+                        // Varsayılan olarak ilk rotayı çiz
+                        if (data.alternatives[0].polyline) {
+                            showRouteOnMap(data.alternatives[0].polyline);
+                        }
+                        
+                        // Rota seçme fonksiyonlarını tanımla
+                        window.selectAltRoute = function(idx) {
+                            // Önceki seçili rotayı temizle
+                            document.querySelectorAll('.route-card').forEach(card => {
+                                card.style.border = '1px solid #ddd';
+                            });
+                            // Seçili rotayı vurgula
+                            document.getElementById(`route-card-${idx}`).style.border = '2px solid #2a3d66';
+                            
+                            // Haritada rotayı göster
+                            const alt = window._promptAlternatives[idx];
+                            if (alt.polyline) {
+                                showRouteOnMap(alt.polyline);
+                            }
+                        };
+                        
+
+                        
+                    } else {
+                        promptResult.innerHTML = '<div style="color:#f44336;">❌ Rota bulunamadı!</div>';
+                    }
+                    
+                    // ML hava durumu tahminlerini göster
+                    if (data.weatherPredictions && data.weatherPredictions.length > 0) {
+                        let weatherHtml = '<div style="margin-bottom:1em;"><strong>🌤️ ML Tabanlı Hava Durumu Tahminleri:</strong></div>';
+                        
+                        data.weatherPredictions.forEach(pred => {
+                            // Hava durumu emoji'si
+                            let weatherEmoji = '🌤️';
+                            if (pred.predictedWeather.includes('kar')) weatherEmoji = '❄️';
+                            else if (pred.predictedWeather.includes('yağmur')) weatherEmoji = '🌧️';
+                            else if (pred.predictedWeather.includes('güneş')) weatherEmoji = '☀️';
+                            else if (pred.predictedWeather.includes('bulut')) weatherEmoji = '⛅';
+                            
+                            weatherHtml += `
+                                <div style="background:#fff;padding:1em;margin:0.5em 0;border-radius:8px;border-left:4px solid #4CAF50;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                    <div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;">
+                                        <span style="font-size:1.5em;">${weatherEmoji}</span>
+                                        <strong style="font-size:1.1em;">🏙️ ${pred.city}</strong>
+                                    </div>
+                                    <div style="margin-bottom:0.5em;">
+                                        <strong>Beklenen Hava Şartı:</strong> ${pred.predictedWeather}
+                                        <br><strong>Sıcaklık:</strong> ${pred.avgTemperature}°C
+                                        <br><strong>İklim Bölgesi:</strong> ${pred.climateZone}
+                                    </div>
+                                    <div style="background:#f8f9fa;padding:0.5em;border-radius:4px;margin-bottom:0.5em;font-size:0.9em;color:#555;">
+                                        <strong>📊 Tahmin Detayı:</strong><br>${pred.explanation}
+                                    </div>
+                                    ${pred.trafficExplanation ? `<div style="background:#fff3cd;padding:0.5em;border-radius:4px;margin-bottom:0.5em;font-size:0.9em;color:#856404;"><strong>🚗 Trafik:</strong> ${pred.trafficExplanation}</div>` : ''}
+                                    <div style="text-align:right;font-size:0.9em;color:#666;">
+                                        <strong>Güven Oranı:</strong> %${Math.round(pred.confidence * 100)}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        weatherResult.innerHTML = weatherHtml;
+                    } else {
+                        weatherResult.innerHTML = '<div style="color:#f44336;">❌ Hava durumu tahmini yapılamadı!</div>';
+                    }
+                    
+                    // Rota özeti
+                    if (data.routeSummary) {
+                        let summaryHtml = '<div style="margin-top:1em;padding:1em;background:#e8f5e8;border-radius:8px;border-left:4px solid #4CAF50;"><strong>📊 Rota Özeti:</strong><br>';
+                        summaryHtml += `Toplam ${data.routeSummary.totalCities} şehir<br>`;
+                        if (data.routeSummary.isHolidayPeriod) {
+                            summaryHtml += `🎉 ${data.routeSummary.holidayName} dönemi<br>`;
+                        }
+                        summaryHtml += `Ortalama trafik çarpanı: ${data.routeSummary.avgTrafficMultiplier.toFixed(2)}x<br>`;
+                        summaryHtml += `Toplam süre etkisi: ${data.routeSummary.totalDurationImpact.toFixed(2)}x</div>`;
+                        
+                        weatherResult.innerHTML += summaryHtml;
+                    }
+                    
+                } else {
+                    promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                    weatherResult.innerHTML = '<div style="color:#f44336;">❌ Hava durumu analizi yapılamadı!</div>';
+                }
+                
+            } catch (error) {
+                console.error('Hata:', error);
+                promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                weatherResult.innerHTML = '<div style="color:#f44336;">❌ Hava durumu analizi yapılamadı!</div>';
+            }
+        });
+        
+        // Prompt'tan şehirleri çıkar
+        function extractCitiesFromPrompt(prompt) {
+            const cities = [];
+            for (const cityName in cityCenters) {
+                if (prompt.toLowerCase().includes(cityName.toLowerCase())) {
+                    cities.push(cityName);
+                }
+            }
+            return cities;
+        }
+        
+        // Prompt'tan tarihi çıkar
+        function extractDateFromPrompt(prompt) {
+            const monthMap = {
+                'ocak': 1, 'january': 1, 'şubat': 2, 'february': 2, 'mart': 3, 'march': 3,
+                'nisan': 4, 'april': 4, 'mayıs': 5, 'may': 5, 'haziran': 6, 'june': 6,
+                'temmuz': 7, 'july': 7, 'ağustos': 8, 'august': 8, 'eylül': 9, 'september': 9,
+                'ekim': 10, 'october': 10, 'kasım': 11, 'november': 11, 'aralık': 12, 'december': 12
+            };
+            
+            for (const monthName in monthMap) {
+                if (prompt.toLowerCase().includes(monthName)) {
+                    return `${new Date().getFullYear()}-${monthMap[monthName].toString().padStart(2, '0')}-01`;
+                }
+            }
+            return new Date().toISOString().split('T')[0];
+        }
+    </script>
+</body>
+</html> 

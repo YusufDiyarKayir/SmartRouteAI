@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartRouteAI - Akıllı Rota Planlayıcı</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+    * {
+    margin: 0;
+    padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #1a202c;
+        min-height: 100vh;
+        line-height: 1.6;
+    }
+
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .header {
+    text-align: center;
+        margin-bottom: 30px;
+        color: white;
+    }
+
+    .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    .main-content {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .sidebar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        height: fit-content;
+    }
+
+    .map-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+#map {
+        height: 600px;
+    width: 100%;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+        /* Chat Section Styles */
+    .chat-section {
+        margin-bottom: 30px;
+    }
+
+    .chat-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+    }
+
+    .chat-header {
+    display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .chat-title {
+    display: flex;
+    align-items: center;
+        gap: 12px;
+    }
+
+    .chat-title i {
+        font-size: 1.5rem;
+    }
+
+    .chat-title h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .chat-status {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .chat-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-icon {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 8px;
+        padding: 8px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-icon:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .chat-messages {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8fafc;
+        scroll-behavior: smooth;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    }
+
+    .message {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        animation: fadeInUp 0.3s ease;
+    }
+
+    .message.user-message {
+        flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .bot-message .message-avatar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .user-message .message-avatar {
+        background: #4a5568;
+        color: white;
+    }
+
+    .message-content {
+        flex: 1;
+        max-width: 70%;
+    }
+
+    .message-text {
+        background: white;
+        padding: 15px 18px;
+        border-radius: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        line-height: 1.5;
+        color: #1a202c;
+    }
+
+    .user-message .message-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: #718096;
+        margin-top: 5px;
+        text-align: right;
+    }
+
+    .user-message .message-time {
+        text-align: left;
+    }
+
+    .chat-input-area {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .chat-input-container {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 15px;
+    }
+
+    .chat-input-container textarea {
+        flex: 1;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-family: inherit;
+        background: white;
+        transition: all 0.3s ease;
+    outline: none;
+        resize: none;
+        min-height: 44px;
+        max-height: 120px;
+        line-height: 1.4;
+    }
+
+    .chat-input-container textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .chat-send-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .chat-send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .chat-send-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .chat-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .suggestion-label {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    .suggestion-btn {
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        color: #4a5568;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .suggestion-btn:hover {
+        background: #edf2f7;
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    /* Chat rota kartları için hover efekti */
+    .chat-messages .message-text div[onclick] {
+        transition: all 0.3s ease;
+    }
+
+    .chat-messages .message-text div[onclick]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        background: #f0f4ff !important;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Control Panel Styles */
+    .control-panel h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1a202c;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .control-panel h3 i {
+        color: #667eea;
+    }
+
+    .control-panel .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        flex: 1;
+    }
+
+    .input-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .input-group label i {
+        color: #667eea;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+    font-size: 1rem;
+        font-family: inherit;
+        background: white;
+        transition: all 0.3s ease;
+        outline: none;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+        line-height: 1.5;
+    }
+
+    .coord-display {
+        display: block;
+        font-size: 0.8rem;
+        color: #718096;
+        margin-top: 5px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .datetime-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    /* Button Styles */
+    .btn-primary, .btn-secondary {
+        padding: 12px 24px;
+    border: none;
+        border-radius: 12px;
+    font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #f7fafc;
+        color: #4a5568;
+        border: 2px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+        background: #edf2f7;
+        border-color: #cbd5e0;
+    }
+
+    .btn-full {
+        width: 100%;
+        margin-top: 15px;
+}
+
+#result {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        font-size: 1.1rem;
+        color: #1a202c;
+    text-align: center;
+        margin: 20px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#route-options {
+        margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+        gap: 15px;
+}
+
+.route-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 20px;
+    display: flex;
+    align-items: center;
+        gap: 15px;
+    cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.route-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+
+    .route-card.selected {
+        border: 2px solid #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.route-title {
+        font-weight: 600;
+        color: #1a202c;
+        font-size: 1.1rem;
+}
+
+.route-info {
+        color: #4a5568;
+        font-size: 0.9rem;
+}
+
+.route-toll {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+}
+
+.route-details-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 25px;
+        font-size: 1rem;
+        color: #1a202c;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.route-details-card div {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border-left: 3px solid #667eea;
+}
+
+.weather-main {
+        font-weight: 600;
+        color: #1a202c;
+}
+
+.weather-impact {
+        color: #e53e3e;
+        font-weight: 600;
+    font-style: italic;
+}
+
+        /* Responsive Design */
+    @media (max-width: 1024px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            order: 2;
+        }
+
+        .map-container {
+            order: 1;
+        }
+
+        #map {
+            height: 400px;
+        }
+
+        .chat-input-container {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-suggestions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .suggestion-btn {
+            text-align: center;
+        }
+
+        .datetime-group {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 15px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .header p {
+    font-size: 1rem;
+}
+
+        .prompt-card, .sidebar, .map-container {
+            padding: 20px;
+}
+
+        .route-details-card {
+            grid-template-columns: 1fr;
+}
+
+        .route-card {
+        flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+    }
+}
+
+    /* Loading Animation */
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-route"></i> SmartRouteAI</h1>
+            <p>Yapay Zeka Destekli Akıllı Rota Planlayıcı</p>
+    </div>
+
+                <!-- AI Chat Section -->
+        <div class="chat-section">
+            <div class="chat-card">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <i class="fas fa-robot"></i>
+                        <h3>SmartRouteAI Asistanı</h3>
+                        <span class="chat-status">Çevrimiçi</span>
+    </div>
+                    <div class="chat-actions">
+                        <button id="clear-chat" class="btn-icon" title="Sohbeti Temizle">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot-message">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">
+                                Merhaba! Ben SmartRouteAI asistanınız. Size en iyi rotayı bulmak için yardımcı olacağım. 
+                                Nereye gitmek istiyorsunuz? Doğal dil ile isteğinizi yazabilirsiniz.
+                            </div>
+                            <div class="message-time">Şimdi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <div class="chat-input-container">
+                        <textarea
+                            id="prompt-input"
+                            placeholder="Örnek: Ankaradan İstanbul'a en hızlı rota, yağmurlu hava koşullarında, ücretli yollardan kaçınarak..."
+                            rows="1"
+                        ></textarea>
+                        <button id="prompt-btn" class="chat-send-btn" title="Gönder">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="chat-suggestions">
+                        <span class="suggestion-label">Hızlı öneriler:</span>
+                        <button class="suggestion-btn" data-suggestion="İstanbul'dan Ankara'ya en hızlı rota">🚗 En Hızlı</button>
+                        <button class="suggestion-btn" data-suggestion="İzmir'den Antalya'ya en ekonomik rota">💰 En Ekonomik</button>
+                        <button class="suggestion-btn" data-suggestion="Bursa'dan İstanbul'a yağmurlu havada rota">🌧️ Hava Durumu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="control-panel">
+                    <h3><i class="fas fa-cog"></i> Rota Ayarları</h3>
+                    
+                    <div class="input-group">
+                        <label for="from-place">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Başlangıç Noktası
+                        </label>
+                        <select id="from-place" class="form-control">
+                            <option value="">Haritadan seçin</option>
+                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+            </select>
+                        <span id="from-coord" class="coord-display">Seçilmedi</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="to-place">
+                            <i class="fas fa-flag-checkered"></i>
+                            Hedef Nokta
+        </label>
+                        <select id="to-place" class="form-control">
+                            <option value="">Haritadan seçin</option>
+                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+            </select>
+                        <span id="to-coord" class="coord-display">Seçilmedi</span>
+                    </div>
+
+                    <div class="datetime-group">
+                        <div class="input-group">
+                            <label for="date-input">
+                                <i class="fas fa-calendar"></i>
+                                Tarih
+        </label>
+                            <input type="date" id="date-input" class="form-control">
+                        </div>
+                        <div class="input-group">
+                            <label for="time-input">
+                                <i class="fas fa-clock"></i>
+                                Saat
+        </label>
+                            <input type="time" id="time-input" class="form-control">
+    </div>
+                    </div>
+
+                    <button id="route-btn" class="btn-primary btn-full">
+                        <i class="fas fa-search"></i>
+                        Rotayı Hesapla
+                    </button>
+
+                    <button id="reset-btn" class="btn-secondary btn-full">
+                        <i class="fas fa-undo"></i>
+                        Sıfırla
+                    </button>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="result"></div>
+        <div id="route-options"></div>
+        <div id="route-details"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Dakikayı "X Saat Y Dakika" formatına çeviren yardımcı fonksiyon
+        function formatDuration(minutes) {
+            if (!minutes || minutes <= 0) return '0 Dakika';
+            
+            // Ondalık kısmı temizle
+            const cleanMinutes = Math.round(minutes);
+            const hours = Math.floor(cleanMinutes / 60);
+            const mins = cleanMinutes % 60;
+            
+            if (hours === 0) {
+                return `${mins} Dakika`;
+            } else if (mins === 0) {
+                return `${hours} Saat`;
+            } else {
+                return `${hours} Saat ${mins} Dakika`;
+            }
+        }
+
+        // Polyline decode (Google polyline formatı) - Sadeleştirilmiş versiyon
+        function decodePolyline(encoded) {
+            if (!encoded || encoded.length === 0) {
+                console.warn('Empty polyline data');
+                return [];
+            }
+            
+            let points = [];
+            let index = 0, len = encoded.length;
+            let lat = 0, lng = 0;
+            
+            try {
+                while (index < len) {
+                    let b, shift = 0, result = 0;
+                    do {
+                        b = encoded.charCodeAt(index++) - 63;
+                        result |= (b & 0x1f) << shift;
+                        shift += 5;
+                    } while (b >= 0x20);
+                    let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                    lat += dlat;
+                    shift = 0;
+                    result = 0;
+                    do {
+                        b = encoded.charCodeAt(index++) - 63;
+                        result |= (b & 0x1f) << shift;
+                        shift += 5;
+                    } while (b >= 0x20);
+                    let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                    lng += dlng;
+                    points.push([lat / 1e5, lng / 1e5]);
+                }
+                
+                console.log(`Decoded ${points.length} points from polyline`);
+                return points;
+            } catch (error) {
+                console.error('Error decoding polyline:', error);
+                return [];
+            }
+        }
+        const map = L.map('map').setView([41.0082, 28.9784], 10); // İstanbul merkezli
+        // Google Maps tile layer kullanarak daha doğru rota çizimi
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '© Google Maps',
+            updateWhenZooming: false,
+            updateWhenIdle: true
+        }).addTo(map);
+
+        let fromMarker = null;
+        let toMarker = null;
+        let fromCoord = null;
+        let toCoord = null;
+        let routeLine = null;
+        let currentRoute = null;
+        let allRoutes = [];
+        let selectedRouteIndex = null;
+
+        function updateCoords() {
+            document.getElementById('from-coord').textContent = fromCoord ? `${fromCoord.lat.toFixed(5)}, ${fromCoord.lng.toFixed(5)}` : 'Seçilmedi';
+            document.getElementById('to-coord').textContent = toCoord ? `${toCoord.lat.toFixed(5)}, ${toCoord.lng.toFixed(5)}` : 'Seçilmedi';
+        }
+
+        function showRouteOptions(routes) {
+            const container = document.getElementById('route-options');
+            container.innerHTML = '';
+            if (!routes || routes.length === 0) return;
+            
+            const header = document.createElement('div');
+            header.style.cssText = 'margin: 20px 0 15px 0; font-size: 1.2rem; font-weight: 600; color: white; text-align: center;';
+            header.innerHTML = '<i class="fas fa-route"></i> Alternatif Rotalar';
+            container.appendChild(header);
+            
+            routes.forEach((route, idx) => {
+                console.log(`[FRONTEND] Route ${idx}:`, route);
+                const div = document.createElement('div');
+                div.className = 'route-card' + (selectedRouteIndex === idx ? ' selected' : '');
+                div.onclick = function() { selectRoute(idx); };
+                
+                // Tatil ve AI bilgisi varsa göster
+                let holidayBadge = '';
+                let aiBadge = '';
+                
+                if (route.isHoliday || route.holidayName) {
+                    const holidayColor = route.isHoliday ? '#ff6b6b' : '#28a745';
+                    holidayBadge = `<span style="background: ${holidayColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px;">
+                        <i class="fas fa-calendar-alt"></i> ${route.holidayName || 'Tatil'}
+                    </span>`;
+                }
+                
+                if (route.aiOptimized) {
+                    const aiColor = route.aiOptimizationScore > 0.7 ? '#28a745' : route.aiOptimizationScore > 0.5 ? '#ffc107' : '#dc3545';
+                    aiBadge = `<span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px;">
+                        <i class="fas fa-robot"></i> AI ${(route.aiOptimizationScore * 100).toFixed(0)}%
+                    </span>`;
+                }
+                
+                // Süre karşılaştırması
+                const originalDuration = formatDuration(route.durationMin || route.estimatedDurationMinutes);
+                const adjustedDuration = formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes);
+                const durationDisplay = route.adjustedDurationMin > (route.durationMin || route.estimatedDurationMinutes) 
+                    ? `${adjustedDuration} <span style="color:#dc3545;font-size:0.9em;">(${originalDuration})</span>`
+                    : adjustedDuration;
+                
+                div.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="route-title">
+                            ${route.title || `Rota ${idx + 1}`}
+                            ${holidayBadge}
+                            ${aiBadge}
+                        </div>
+                        <div style="display: flex; gap: 15px; margin-top: 8px;">
+                            <span class="route-info"><i class="fas fa-road"></i> ${route.distanceKm} km</span>
+                            <span class="route-info"><i class="fas fa-clock"></i> ${durationDisplay}</span>
+                        </div>
+                        ${route.weatherImpact ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;"><i class="fas fa-exclamation-triangle"></i> ${route.weatherImpact}</div>` : ''}
+                    </div>
+                    <span class="route-toll">${route.tollClass}</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        function showRouteDetails(route) {
+            const details = document.getElementById('route-details');
+            if (!route) { details.innerHTML = ''; return; }
+            
+            // Tatil bilgilerini göster
+            let holidayInfo = '';
+            if (route.isHoliday || route.holidayName) {
+                const isHoliday = route.isHoliday || route.holidayName;
+                const holidayColor = isHoliday ? '#ff6b6b' : '#28a745';
+                const trafficMultiplier = route.holidayTrafficMultiplier || 1.0;
+                const trafficColor = trafficMultiplier > 1.5 ? '#dc3545' : trafficMultiplier > 1.1 ? '#ffc107' : '#28a745';
+                
+                holidayInfo = `
+                    <div style="grid-column: 1 / -1; background: ${isHoliday ? '#fff3cd' : '#d1ecf1'}; border-radius: 10px; padding: 15px; border-left: 3px solid ${holidayColor};">
+                        <i class="fas fa-calendar-alt"></i> <b>Tarih Analizi:</b>
+                        <br><b>Tatil:</b> <span style="color:${holidayColor};font-weight:bold;">${route.holidayName || 'Normal gün'}</span>
+                        <br><b>Trafik Yoğunluğu:</b> <span style="color:${trafficColor};font-weight:bold;">${trafficMultiplier.toFixed(1)}x</span>
+                        <br><b>Süre Etkisi:</b> <span style="color:${holidayColor};font-weight:bold;">${route.weatherImpact || 'Normal trafik'}</span>
+                    </div>
+                `;
+            }
+            
+            // AI bilgilerini göster
+            let aiInfo = '';
+            if (route.aiOptimized) {
+                const aiColor = route.aiOptimizationScore > 0.7 ? '#28a745' : route.aiOptimizationScore > 0.5 ? '#ffc107' : '#dc3545';
+                aiInfo = `
+                    <div style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; padding: 15px; color: white; margin-bottom: 10px;">
+                        <i class="fas fa-robot"></i> <b>AI Optimizasyonu</b>
+                        <br><b>Model:</b> ${route.aiModelUsed || 'LSTM + Transformer'}
+                        <br><b>Optimizasyon Skoru:</b> <span style="color:${aiColor};font-weight:bold;">${(route.aiOptimizationScore * 100).toFixed(1)}%</span>
+                        <br><b>Güven Skoru:</b> <span style="color:${aiColor};font-weight:bold;">${(route.aiConfidence * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+            }
+            
+            details.innerHTML = `
+                <div class="route-details-card">
+                    ${aiInfo}
+                    ${holidayInfo}
+                    <div><i class="fas fa-road"></i> <b>Mesafe:</b> ${route.distanceKm} km</div>
+                    <div><i class="fas fa-clock"></i> <b>Orijinal Süre:</b> ${formatDuration(route.durationMin || route.estimatedDurationMinutes)}</div>
+                    <div><i class="fas fa-clock"></i> <b>${route.aiOptimized ? 'AI Optimize' : 'Düzeltilmiş'} Süre:</b> <span style="color:${route.adjustedDurationMin > (route.durationMin || route.estimatedDurationMinutes) ? '#dc3545' : '#28a745'};font-weight:bold;">${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</span></div>
+                    <div><i class="fas fa-calendar-check"></i> <b>Tahmini varış:</b> ${route.arrivalStr || route.arrivalstr || '-'}</div>
+                    <div><i class="fas fa-cloud-sun"></i> <b>Beklenen hava:</b> <span class="weather-main">${route.weatherDesc || route.weatherdesc ? (route.weatherDesc || route.weatherdesc).charAt(0).toUpperCase() + (route.weatherDesc || route.weatherdesc).slice(1) : (route.weather || '-')}</span></div>
+                    <div><i class="fas fa-exclamation-triangle"></i> <b>${route.aiOptimized ? 'AI, Hava ve Tatil' : 'Hava ve Tatil'} Etkisi:</b> <span class="weather-impact">${route.weatherImpact || 'Yok'}</span></div>
+                    <div><i class="fas fa-highway"></i> <b>Otoyol:</b> <span class="route-toll">${route.tollClass}</span></div>
+                    <div><i class="fas fa-credit-card"></i> <b>Ücretli geçiş:</b> <span class="route-toll">${route.tollInfo || route.tollinfo || '-'}</span></div>
+                </div>
+            `;
+        }
+
+        function selectRoute(idx) {
+            selectedRouteIndex = idx;
+            showRouteOptions(allRoutes);
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            const route = allRoutes[idx];
+            
+            // Polyline verisini farklı formatlardan al
+            let polylineData = '';
+            if (route.polyline) {
+                polylineData = route.polyline;
+            } else if (route.overviewPolyline && route.overviewPolyline.points) {
+                polylineData = route.overviewPolyline.points;
+            } else if (route.legs && route.legs.length > 0 && route.legs[0].overview_polyline && route.legs[0].overview_polyline.points) {
+                polylineData = route.legs[0].overview_polyline.points;
+            }
+            
+            if (polylineData && polylineData.length > 0) {
+                const latlngs = decodePolyline(polylineData);
+                if (latlngs.length > 1) {
+                    routeLine = L.polyline(latlngs, {
+                        color: '#e74c3c', 
+                        weight: 6, 
+                        opacity: 0.95,
+                        smoothFactor: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+                    map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                    updateRouteStyle();
+                } else {
+                    console.warn('Route polyline decoded but insufficient points');
+                }
+            } else {
+                console.warn('No polyline data found for route');
+            }
+            showRouteDetails(route);
+        }
+
+        // Dropdown seçimleri
+        document.getElementById('from-place').onchange = function() {
+            const val = this.value;
+            if (val) {
+                const [lat, lng] = val.split(',').map(Number);
+                fromCoord = { lat, lng };
+                if (fromMarker) { map.removeLayer(fromMarker); }
+                fromMarker = L.marker([lat, lng], { draggable: true }).addTo(map).bindPopup('Başlangıç').openPopup();
+                fromMarker.on('dragend', function(ev) {
+                    fromCoord = ev.target.getLatLng();
+                    document.getElementById('from-place').value = '';
+                    updateCoords();
+                });
+                map.setView([lat, lng], 12);
+                updateCoords();
+            } else {
+                if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; updateCoords(); }
+            }
+        };
+        document.getElementById('to-place').onchange = function() {
+            const val = this.value;
+            if (val) {
+                const [lat, lng] = val.split(',').map(Number);
+                toCoord = { lat, lng };
+                if (toMarker) { map.removeLayer(toMarker); }
+                toMarker = L.marker([lat, lng], { draggable: true, icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map).bindPopup('Hedef').openPopup();
+                toMarker.on('dragend', function(ev) {
+                    toCoord = ev.target.getLatLng();
+                    document.getElementById('to-place').value = '';
+                    updateCoords();
+                });
+                map.setView([lat, lng], 12);
+                updateCoords();
+            } else {
+                if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; updateCoords(); }
+            }
+        };
+
+        // Haritadan tıklama
+        map.on('click', function(e) {
+            if (!fromMarker) {
+                fromCoord = e.latlng;
+                fromMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup('Başlangıç').openPopup();
+                fromMarker.on('dragend', function(ev) {
+                    fromCoord = ev.target.getLatLng();
+                    document.getElementById('from-place').value = '';
+                    updateCoords();
+                });
+                document.getElementById('from-place').value = '';
+            } else if (!toMarker) {
+                toCoord = e.latlng;
+                toMarker = L.marker(e.latlng, { draggable: true, icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map).bindPopup('Hedef').openPopup();
+                toMarker.on('dragend', function(ev) {
+                    toCoord = ev.target.getLatLng();
+                    document.getElementById('to-place').value = '';
+                    updateCoords();
+                });
+                document.getElementById('to-place').value = '';
+            }
+            updateCoords();
+        });
+
+        document.getElementById('reset-btn').onclick = function() {
+            if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; }
+            if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; }
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            currentRoute = null;
+            updateCoords();
+            document.getElementById('result').textContent = '';
+            document.getElementById('route-details').innerHTML = ''; // Sıfırlama
+        };
+
+        function updateRouteStyle() {
+            if (!routeLine) return;
+            const zoom = map.getZoom();
+            if (zoom < 12) {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 8, 
+                    opacity: 0.9,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            } else if (zoom < 15) {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 6, 
+                    opacity: 0.95,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            } else {
+                routeLine.setStyle({ 
+                    color: '#e74c3c', 
+                    weight: 4, 
+                    opacity: 1.0,
+                    smoothFactor: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+            }
+        }
+        map.on('zoomend', updateRouteStyle);
+
+        document.getElementById('route-btn').onclick = async function() {
+            if (!fromCoord || !toCoord) {
+                alert('Lütfen haritadan veya listeden başlangıç ve hedef seçin!');
+                return;
+            }
+            const date = document.getElementById('date-input').value;
+            const time = document.getElementById('time-input').value;
+            if (!date || !time) {
+                alert('Lütfen tarih ve saat seçin!');
+                return;
+            }
+            const data = {
+                fromLat: fromCoord.lat,
+                fromLng: fromCoord.lng,
+                toLat: toCoord.lat,
+                toLng: toCoord.lng,
+                date,
+                time
+            };
+            console.log('[FRONTEND] Sending route request:', data);
+            document.getElementById('result').textContent = 'Hesaplanıyor...';
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            currentRoute = null;
+            try {
+                const resp = await fetch('http://localhost:5077/route', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await resp.json();
+                if (result.error) {
+                    document.getElementById('result').textContent = 'Hata: ' + result.error;
+                } else if (result.routes && result.routes.length > 0) {
+                    allRoutes = result.routes;
+                    selectedRouteIndex = 0;
+                    showRouteOptions(allRoutes);
+                    document.getElementById('result').textContent = '';
+                    selectRoute(0);
+                } else {
+                    document.getElementById('result').textContent = `Mesafe: ${result.distanceKm} km, Tahmini Süre: ${formatDuration(result.adjustedDurationMin || result.estimatedDurationMinutes)}`;
+                    if (result.polyline) {
+                        const latlngs = decodePolyline(result.polyline);
+                        routeLine = L.polyline(latlngs, {
+                            color: '#e74c3c', 
+                            weight: 6, 
+                            opacity: 0.95,
+                            smoothFactor: 1,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                        map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                        updateRouteStyle();
+                    } else if (result.distanceKm > 0) {
+                        alert('Yol bulundu ama rota çizilemedi. Mesafe: ' + result.distanceKm + ' km');
+                    } else {
+                        alert('Backendden rota verisi gelmedi veya boş. Lütfen farklı bir güzergah deneyin.');
+                    }
+                }
+            } catch (err) {
+                document.getElementById('result').textContent = 'Sunucuya ulaşılamıyor.';
+            }
+        };
+
+        // Chat işleme
+        const promptBtn = document.getElementById('prompt-btn');
+        promptBtn.onclick = async function() {
+            await sendMessage();
+        };
+
+        // Enter tuşu ile gönderme ve textarea boyutlandırma
+        document.getElementById('prompt-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Textarea otomatik boyutlandırma
+        document.getElementById('prompt-input').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Hızlı öneriler
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const suggestion = this.getAttribute('data-suggestion');
+                document.getElementById('prompt-input').value = suggestion;
+                sendMessage();
+            });
+        });
+
+        // Sohbeti temizle
+        document.getElementById('clear-chat').addEventListener('click', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            Merhaba! Ben SmartRouteAI asistanınız. Size en iyi rotayı bulmak için yardımcı olacağım. 
+                            Nereye gitmek istiyorsunuz? Doğal dil ile isteğinizi yazabilirsiniz.
+                        </div>
+                        <div class="message-time">Şimdi</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        async function sendMessage() {
+            const promptInput = document.getElementById('prompt-input');
+            const prompt = promptInput.value.trim();
+            if (!prompt) return;
+
+            // Kullanıcı mesajını ekle
+            addMessage(prompt, 'user');
+            promptInput.value = '';
+
+            // Gönder butonunu devre dışı bırak
+            const sendBtn = document.getElementById('prompt-btn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                // Bot yanıtını ekle (yükleniyor)
+                const loadingId = addMessage('Rota analiz ediliyor ve hesaplanıyor...', 'bot', true);
+
+                // Önce prompt analizi yap
+                const analysisResponse = await fetch('/api/route/analyze-prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const analysis = await analysisResponse.json();
+                
+                // Sonra tam rota hesaplaması yap
+                const routeResponse = await fetch('/api/route/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                const routeData = await routeResponse.json();
+                
+                // Yükleniyor mesajını kaldır
+                removeMessage(loadingId);
+
+                // Detaylı bot yanıtını oluştur
+                let responseText = `
+                    <strong>🎯 Rota Analizi ve Hesaplama Tamamlandı!</strong><br><br>
+                    <strong>📍 Kaynak:</strong> ${analysis.source || 'Belirlenemedi'}<br>
+                    <strong>🎯 Hedef:</strong> ${analysis.destination || 'Belirlenemedi'}<br>
+                    <strong>⚡ İstekler:</strong> ${analysis.requests.join(', ') || 'Yok'}<br>
+                    <strong>🌉 Köprü Direktifleri:</strong> ${analysis.bridgeDirectives.map(d => d.name).join(', ') || 'Yok'}<br>
+                    <strong>🛣️ Otoyol Direktifleri:</strong> ${analysis.highwayDirectives.map(d => d.name).join(', ') || 'Yok'}<br>
+                    <strong>🌤️ Hava Koşulları:</strong> ${analysis.weatherConditions.join(', ') || 'Yok'}<br><br>
+                `;
+
+                // Tatil bilgilerini ekle
+                if (routeData.holidayInfo && Object.keys(routeData.holidayInfo).length > 0) {
+                    const holiday = routeData.holidayInfo;
+                    const isHoliday = holiday.isHoliday || holiday.isWeekend;
+                    const holidayColor = isHoliday ? '#ff6b6b' : '#28a745';
+                    const holidayIcon = isHoliday ? '🎉' : '📅';
+                    const trafficMultiplier = holiday.trafficMultiplier || 1.0;
+                    
+                    responseText += `
+                        <div style="margin: 10px 0; padding: 10px; background: ${isHoliday ? '#fff3cd' : '#d1ecf1'}; border-radius: 8px; border-left: 4px solid ${holidayColor};">
+                            <strong>${holidayIcon} Tarih Analizi:</strong><br>
+                            <strong>Tarih:</strong> ${holiday.dayOfWeek || 'Bilinmiyor'}<br>
+                            <strong>Tatil Durumu:</strong> <span style="color:${holidayColor};font-weight:bold;">${holiday.holidayName || 'Normal gün'}</span><br>
+                            <strong>Trafik Yoğunluğu:</strong> <span style="color:${trafficMultiplier > 1.5 ? '#dc3545' : trafficMultiplier > 1.2 ? '#ffc107' : '#28a745'};font-weight:bold;">${trafficMultiplier.toFixed(1)}x</span>
+                        </div>
+                    `;
+                }
+
+                // Alternatif rotaları ekle
+                if (routeData.alternatives && routeData.alternatives.length > 0) {
+                    // Rotaları global değişkende sakla ve polyline formatını düzelt
+                    window.chatRoutes = routeData.alternatives.map(route => {
+                        // Polyline verisini farklı formatlardan al
+                        let polylineData = '';
+                        if (route.polyline) {
+                            polylineData = route.polyline;
+                        } else if (route.overviewPolyline && route.overviewPolyline.points) {
+                            polylineData = route.overviewPolyline.points;
+                        } else if (route.legs && route.legs.length > 0 && route.legs[0].overview_polyline && route.legs[0].overview_polyline.points) {
+                            polylineData = route.legs[0].overview_polyline.points;
+                        }
+                        
+                        return {
+                            ...route,
+                            polyline: polylineData
+                        };
+                    });
+                    
+                    // allRoutes'u da güncelle
+                    allRoutes = window.chatRoutes;
+                    
+                    responseText += `<br><strong>🛣️ Alternatif Rotalar (${routeData.alternatives.length} adet):</strong><br>`;
+                    
+                    routeData.alternatives.forEach((alt, idx) => {
+                        const durationDisplay = formatDuration(alt.adjustedDurationMin || alt.durationMin);
+                        const tollInfo = alt.hasToll ? '<span style="color:#e74c3c;font-weight:bold;">💰 Ücretli yol</span>' : '<span style="color:#27ae60;">✅ Ücretsiz</span>';
+                        const weatherImpact = alt.weatherImpact ? `<br><span style="color:#e74c3c;font-style:italic;">🌤️ ${alt.weatherImpact}</span>` : '';
+                        
+                        responseText += `
+                            <div style="margin: 8px 0; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea; cursor: pointer;" onclick="selectRouteFromChat(${idx})">
+                                <strong>Rota ${idx + 1}:</strong> ${alt.distanceKm} km, ${durationDisplay}<br>
+                                ${tollInfo}${weatherImpact}
+                            </div>
+                        `;
+                    });
+                }
+
+                // Debug: Hava durumu verilerini kontrol et
+                console.log('Weather Predictions:', routeData.weatherPredictions);
+                console.log('Weather Predictions length:', routeData.weatherPredictions?.length);
+                
+                // Hava durumu tahminlerini ekle
+                if (routeData.weatherPredictions && routeData.weatherPredictions.length > 0) {
+                    responseText += `<br><strong>🌤️ Rota Üzerindeki İllerin Hava Durumu:</strong><br>`;
+                    
+                    routeData.weatherPredictions.forEach(pred => {
+                        console.log('Processing prediction:', pred);
+                        const weatherIcon = pred.predictedWeather === 'kar' ? '❄️' : 
+                                          pred.predictedWeather === 'yağmur' ? '🌧️' : '☀️';
+                        
+                        responseText += `${weatherIcon} <strong>${pred.city}:</strong> ${pred.predictedWeather} (${pred.avgTemperature}°C)<br>`;
+                        responseText += `Güven: %${Math.round(pred.confidence * 100)}<br>`;
+                    });
+                } else {
+                    console.log('No weather predictions found');
+                    responseText += `<br><strong>🌤️ Rota Üzerindeki İllerin Hava Durumu:</strong><br>`;
+                    responseText += `Hava durumu verisi bulunamadı<br>`;
+                }
+
+                responseText += `<br><em>💡 Yukarıdaki rotalardan birine tıklayarak haritada görüntüleyebilirsiniz!</em>`;
+                
+                addMessage(responseText, 'bot');
+
+            } catch (error) {
+                console.error('Rota hesaplama hatası:', error);
+                removeMessage(loadingId);
+                addMessage('❌ Rota hesaplama sırasında hata oluştu. Lütfen tekrar deneyin.', 'bot');
+            } finally {
+                // Gönder butonunu tekrar aktif et
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            }
+        }
+
+        function addMessage(text, sender, isLoading = false) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageId = 'msg-' + Date.now();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.id = messageId;
+            
+            const avatar = sender === 'bot' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    ${avatar}
+                </div>
+                <div class="message-content">
+                    <div class="message-text">
+                        ${isLoading ? '<i class="fas fa-spinner fa-spin"></i> ' : ''}${text}
+                    </div>
+                    <div class="message-time">${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageId;
+        }
+
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
+            }
+        }
+
+        // Chat'ten rota seçme fonksiyonu
+        function selectRouteFromChat(routeIndex) {
+            console.log(`[CHAT] selectRouteFromChat called with index: ${routeIndex}`);
+            console.log(`[CHAT] window.chatRoutes:`, window.chatRoutes);
+            
+            // Global değişkenlerde rotaları saklayalım
+            if (window.chatRoutes && window.chatRoutes[routeIndex]) {
+                // allRoutes'u güncelle
+                allRoutes = window.chatRoutes;
+                selectedRouteIndex = routeIndex;
+                
+                console.log(`[CHAT] Selected route:`, window.chatRoutes[routeIndex]);
+                console.log(`[CHAT] Route polyline:`, window.chatRoutes[routeIndex].polyline);
+                
+                // Orijinal selectRoute fonksiyonunu çağır
+                selectRoute(routeIndex);
+                
+                // Bot mesajı ekle
+                const route = window.chatRoutes[routeIndex];
+                addMessage(`✅ Rota ${routeIndex + 1} haritada gösteriliyor! Mesafe: ${route.distanceKm} km, Süre: ${formatDuration(route.adjustedDurationMin || route.durationMin)}`, 'bot');
+            } else {
+                addMessage('❌ Rota bilgileri bulunamadı. Lütfen tekrar deneyin.', 'bot');
+            }
+        }
+
+        // Eski prompt fonksiyonu (geçici olarak tutuyoruz)
+        async function processPrompt() {
+            const prompt = document.getElementById('prompt-input').value.trim();
+            const resultDiv = document.getElementById('prompt-result');
+            if (!prompt) {
+                resultDiv.textContent = 'Lütfen bir prompt girin.';
+                return;
+            }
+            resultDiv.textContent = 'Hesaplanıyor...';
+            if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; }
+            if (toMarker) { map.removeLayer(toMarker); toMarker = null; }
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            if (window._cityMarkers) window._cityMarkers.forEach(m => map.removeLayer(m));
+            window._cityMarkers = [];
+            try {
+                const resp = await fetch('http://localhost:5077/api/Route/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await resp.json();
+                if (!data.alternatives || data.alternatives.length === 0) {
+                    resultDiv.textContent = 'Rota bulunamadı veya şehirler tespit edilemedi.';
+                    return;
+                }
+                // Alternatif rotaları prompta göre sırala
+                let sortedAlternatives = data.alternatives;
+                const promptLower = prompt.toLowerCase();
+                if (promptLower.includes('en uzun yol')) {
+                    sortedAlternatives = [...data.alternatives].sort((a, b) => b.distanceKm - a.distanceKm);
+                } else if (promptLower.includes('en kısa yol')) {
+                    sortedAlternatives = [...data.alternatives].sort((a, b) => a.distanceKm - b.distanceKm);
+                } else if (promptLower.includes('en maliyetli')) {
+                    sortedAlternatives = [...data.alternatives].sort((a, b) => (b.hasToll ? 1 : 0) - (a.hasToll ? 1 : 0));
+                } else if (promptLower.includes('en ucuz') || promptLower.includes('en düşük maliyet')) {
+                    sortedAlternatives = [...data.alternatives].sort((a, b) => (a.hasToll ? 1 : 0) - (b.hasToll ? 1 : 0));
+                }
+                // Alternatif rotaları kartlar halinde göster
+                let altHtml = '<b>Alternatif Rotalar:</b><br><div id="alt-routes-list" style="display:flex;flex-direction:column;gap:1em;margin-top:1em;">';
+                sortedAlternatives.forEach((alt, idx) => {
+                    altHtml += `<div class="route-card" id="route-card-${idx}" style="padding:1em;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);background:#fff;cursor:pointer;${idx===0?'border:2px solid #2a3d66;':''}" onclick="window.selectAltRoute(${idx})">
+                        <b>${alt.summary || 'Alternatif Rota ' + (idx+1)}</b><br>
+                        Mesafe: ${alt.distanceKm} km, Süre: ${formatDuration(alt.adjustedDurationMin || alt.durationMin)}<br>
+                        ${alt.hasToll ? '<span style=\"color:#e74c3c;font-weight:bold;\">Ücretli yol içerir</span>' : '<span style=\"color:#27ae60;\">Ücretli yol içermez</span>'}
+                        ${alt.weatherImpact ? `<br><span style=\"color:#e74c3c;font-weight:bold;font-style:italic;\">${alt.weatherImpact}</span>` : ''}
+
+                    </div>`;
+                });
+                altHtml += '</div>';
+                
+                // Tatil bilgilerini göster
+                let holidayHtml = '';
+                if (data.holidayInfo && Object.keys(data.holidayInfo).length > 0) {
+                    const holiday = data.holidayInfo;
+                    const isHoliday = holiday.isHoliday || holiday.isWeekend;
+                    const holidayColor = isHoliday ? '#ff6b6b' : '#28a745';
+                    const holidayIcon = isHoliday ? '🎉' : '📅';
+                    const trafficMultiplier = holiday.trafficMultiplier || 1.0;
+                    const trafficColor = trafficMultiplier > 1.5 ? '#dc3545' : trafficMultiplier > 1.1 ? '#ffc107' : '#28a745';
+                    
+                    holidayHtml = `<br><div style="margin-top:1em;padding:1em;background:${isHoliday ? '#fff3cd' : '#d1ecf1'};border-radius:8px;border-left:4px solid ${holidayColor};">
+                        <b>${holidayIcon} Tarih Analizi:</b><br>
+                        <div style="margin:0.5em 0;padding:1em;background:white;border-radius:6px;">
+                            <b>Tarih:</b> ${holiday.dayOfWeek || 'Bilinmiyor'}
+                            <br><b>Tatil Durumu:</b> <span style="color:${holidayColor};font-weight:bold;">${holiday.holidayName || 'Normal gün'}</span>
+                            ${holiday.holidayType ? `<br><b>Tatil Türü:</b> <span style="color:#6c757d;">${holiday.holidayType}</span>` : ''}
+                            <br><b>Trafik Yoğunluğu:</b> <span style="color:${trafficColor};font-weight:bold;">${trafficMultiplier.toFixed(1)}x</span>
+                            <br><b>Etki:</b> <span style="color:${holidayColor};font-weight:bold;">${holiday.holidayImpact || 'Normal trafik'}</span>
+                            ${holiday.isWeekend ? '<br><span style="color:#ffc107;font-weight:bold;">⚠️ Hafta sonu - Trafik yoğunluğu artabilir</span>' : ''}
+                        </div>
+                    </div>`;
+                }
+                
+                // Gelişmiş hava durumu tahminlerini göster
+                let weatherHtml = '';
+                if (data.weatherPredictions && data.weatherPredictions.length > 0) {
+                    weatherHtml = '<br><div style="margin-top:1em;padding:1em;background:#f8f9fa;border-radius:8px;border-left:4px solid #007bff;"><b>🌤️ Rota Üzerindeki İllerin Detaylı Analizi:</b><br>';
+                    data.weatherPredictions.forEach(pred => {
+                        const weatherIcon = pred.predictedWeather === 'kar' ? '❄️' : 
+                                          pred.predictedWeather === 'yağmur' ? '🌧️' : '☀️';
+                        const confidenceColor = pred.confidence > 0.8 ? '#28a745' : pred.confidence > 0.6 ? '#ffc107' : '#dc3545';
+                        const trafficColor = pred.trafficMultiplier > 1.5 ? '#dc3545' : pred.trafficMultiplier < 0.7 ? '#28a745' : '#ffc107';
+                        const holidayBadge = pred.isHoliday ? `<span style="background:#ff6b6b;color:white;padding:2px 6px;border-radius:4px;font-size:0.8em;">${pred.holidayName}</span>` : '';
+                        
+                        weatherHtml += `<div style="margin:0.5em 0;padding:1em;background:white;border-radius:6px;border-left:3px solid ${confidenceColor};">
+                            ${weatherIcon} <b>${pred.city}</b> ${holidayBadge}
+                            <br><span style="color:#666;font-size:0.9em;">${pred.season} mevsimi • ${pred.climateZone} iklimi • ${pred.avgTemperature}°C</span>
+                            <br><b>Beklenen Hava:</b> ${pred.predictedWeather}
+                            <br><b>Trafik Yoğunluğu:</b> <span style="color:${trafficColor};font-weight:bold;">${pred.trafficMultiplier.toFixed(1)}x</span>
+                            <br><b>Süre Etkisi:</b> <span style="color:${pred.weatherDurationImpact > 1.2 ? '#dc3545' : '#28a745'};font-weight:bold;">${pred.weatherDurationImpact.toFixed(1)}x</span>
+                            <br><small style="color:#666;">${pred.explanation}</small>
+                            <br><small style="color:#666;">${pred.trafficExplanation}</small>
+                            <br><small style="color:${confidenceColor};font-weight:bold;">Güven: %${Math.round(pred.confidence * 100)}</small>
+                        </div>`;
+                    });
+                    weatherHtml += '</div>';
+                }
+                
+                // Rota önerilerini göster
+                let recommendationsHtml = '';
+                if (data.routeRecommendations && data.routeRecommendations.length > 0) {
+                    recommendationsHtml = '<br><div style="margin-top:1em;padding:1em;background:#fff3cd;border-radius:8px;border-left:4px solid #ffc107;"><b>💡 Akıllı Rota Önerileri:</b><br>';
+                    data.routeRecommendations.forEach(rec => {
+                        const priorityColor = rec.priority === 'high' ? '#dc3545' : rec.priority === 'medium' ? '#ffc107' : '#28a745';
+                        const impactIcon = rec.impact === 'duration_increase' ? '⏰' : 
+                                         rec.impact === 'safety_improvement' ? '🛡️' : 
+                                         rec.impact === 'traffic_avoidance' ? '🚗' : '💡';
+                        
+                        recommendationsHtml += `<div style="margin:0.5em 0;padding:0.8em;background:white;border-radius:6px;border-left:3px solid ${priorityColor};">
+                            ${impactIcon} <b>${rec.message}</b>
+                            <br><small style="color:${priorityColor};font-weight:bold;">Öncelik: ${rec.priority.toUpperCase()}</small>
+                        </div>`;
+                    });
+                    recommendationsHtml += '</div>';
+                }
+                
+                // Maliyet analizini göster
+                let costHtml = '';
+                if (data.costAnalysis && Object.keys(data.costAnalysis).length > 0) {
+                    costHtml = '<br><div style="margin-top:1em;padding:1em;background:#d1ecf1;border-radius:8px;border-left:4px solid #17a2b8;"><b>💰 Rota Maliyet Analizi:</b><br>';
+                    if (data.costAnalysis.total_cost) {
+                        costHtml += `<div style="margin:0.5em 0;padding:0.8em;background:white;border-radius:6px;">
+                            <b>Toplam Maliyet:</b> <span style="color:#dc3545;font-weight:bold;font-size:1.2em;">${data.costAnalysis.total_cost} TL</span>
+                            <br><small style="color:#666;">Yaklaşık ${data.costAnalysis.cost_per_km?.toFixed(2) || '0'} TL/km</small>
+                        </div>`;
+                    }
+                    if (data.costAnalysis.toll_details && data.costAnalysis.toll_details.length > 0) {
+                        costHtml += '<div style="margin:0.5em 0;padding:0.8em;background:white;border-radius:6px;"><b>Ücretli Geçişler:</b><br>';
+                        data.costAnalysis.toll_details.forEach(toll => {
+                            costHtml += `<small>• ${toll.name}: ${toll.cost} TL (${toll.type})</small><br>`;
+                        });
+                        costHtml += '</div>';
+                    }
+                    costHtml += '</div>';
+                }
+                
+                // Rota özetini göster
+                let summaryHtml = '';
+                if (data.routeSummary) {
+                    const summary = data.routeSummary;
+                    const holidayBadge = summary.isHolidayPeriod ? `<span style="background:#ff6b6b;color:white;padding:4px 8px;border-radius:4px;font-size:0.9em;">${summary.holidayName}</span>` : '';
+                    
+                    summaryHtml = '<br><div style="margin-top:1em;padding:1em;background:#e2e3e5;border-radius:8px;border-left:4px solid #6c757d;"><b>📊 Rota Özeti:</b><br>';
+                    summaryHtml += `<div style="margin:0.5em 0;padding:0.8em;background:white;border-radius:6px;">
+                        <b>Toplam Şehir:</b> ${summary.totalCities} il
+                        ${holidayBadge}
+                        <br><b>Ortalama Trafik Yoğunluğu:</b> <span style="color:${summary.avgTrafficMultiplier > 1.5 ? '#dc3545' : summary.avgTrafficMultiplier < 0.7 ? '#28a745' : '#ffc107'};font-weight:bold;">${summary.avgTrafficMultiplier.toFixed(1)}x</span>
+                        <br><b>Toplam Süre Etkisi:</b> <span style="color:${summary.totalDurationImpact > 1.2 ? '#dc3545' : '#28a745'};font-weight:bold;">${summary.totalDurationImpact.toFixed(1)}x</span>
+                    </div>`;
+                    summaryHtml += '</div>';
+                }
+                
+                resultDiv.innerHTML = altHtml + holidayHtml + weatherHtml + recommendationsHtml + costHtml + summaryHtml + `<br><b>İstekler:</b> ${data.requests ? data.requests.join(', ') : '-'}` + (data.constraints && data.constraints.length > 0 ? `<br><b>Kısıtlamalar:</b> ${data.constraints.join(', ')}` : '');
+
+                // Tatil bilgilerini global değişkene kaydet
+                window._currentHolidayInfo = data.holidayInfo;
+
+                // Varsayılan olarak ilk rotayı çiz
+                window._promptAlternatives = sortedAlternatives;
+                window.selectAltRoute = function(idx) {
+                    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+                    if (window._cityMarkers) window._cityMarkers.forEach(m => map.removeLayer(m));
+                    window._cityMarkers = [];
+                    const alt = window._promptAlternatives[idx];
+                    // Şehir markerları
+                    let bounds = [];
+                    for (let i = 0; i < alt.route.length; i++) {
+                        let city = alt.route[i];
+                        let parts = city.split(/,|\/|-/).map(s => s.trim());
+                        // Şehir eşleştirme için normalize edilmiş map
+                        const turkishMap = { 'İ':'I', 'ı':'i', 'Ş':'S', 'ş':'s', 'Ğ':'G', 'ğ':'g', 'Ü':'U', 'ü':'u', 'Ö':'O', 'ö':'o', 'Ç':'C', 'ç':'c' };
+                        function normalize(str) { return str.replace(/[İıŞşĞğÜüÖöÇç]/g, c => turkishMap[c] || c).toLowerCase(); }
+                        let foundCity = null;
+                        // Önce tüm parçalarda ara (normalize map ile)
+                        outer: for (const part of parts) {
+                            const norm = normalize(part);
+                            if (cityCentersMap[norm]) { foundCity = cityCentersMap[norm]; break outer; }
+                        }
+                        // Hiçbiri bulunamazsa, son parçayı şehir olarak dene
+                        if (!foundCity && parts.length > 1) {
+                            const lastPart = parts[parts.length-1];
+                            const norm = normalize(lastPart);
+                            if (cityCentersMap[norm]) { foundCity = cityCentersMap[norm]; }
+                        }
+                        if (foundCity) {
+                            const cityCoords = cityCenters[foundCity];
+                            const marker = L.marker(cityCoords, { icon: i === 0 ? startIcon : (i === alt.route.length-1 ? endIcon : waypointIcon) }).addTo(map).bindPopup(foundCity);
+                            bounds.push(cityCoords);
+                            window._cityMarkers.push(marker);
+                        }
+                    }
+                    if (bounds.length > 0) map.fitBounds(bounds, {padding: [50, 50]});
+                    // Polyline ile rota çiz
+                    if (alt.polyline && alt.polyline.length > 0) {
+                        const latlngs = decodePolyline(alt.polyline);
+                        if (latlngs.length > 1) {
+                            routeLine = L.polyline(latlngs, {
+                                color: '#e74c3c', 
+                                weight: 4, 
+                                opacity: 0.9,
+                                smoothFactor: 1
+                            }).addTo(map);
+                            map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+                            updateRouteStyle();
+                        } else {
+                            console.warn('Polyline decoded but insufficient points');
+                            if (bounds.length > 1) {
+                                routeLine = L.polyline(bounds, {
+                                    color: '#e74c3c', 
+                                    weight: 6, 
+                                    opacity: 0.95,
+                                    smoothFactor: 1,
+                                    lineCap: 'round',
+                                    lineJoin: 'round'
+                                }).addTo(map);
+                            }
+                        }
+                    } else if (bounds.length > 1) {
+                        console.log('Using bounds for route line');
+                        routeLine = L.polyline(bounds, {
+                            color: '#e74c3c', 
+                            weight: 6, 
+                            opacity: 0.95,
+                            smoothFactor: 1,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(map);
+                    } else {
+                        console.warn('No polyline or bounds available for route');
+                    }
+                };
+                window.selectAltRoute(0);
+            } catch (err) {
+                resultDiv.textContent = 'Sunucuya ulaşılamadı veya hata oluştu.';
+            }
+        };
+        // Şehir merkezleri koordinatları (örnek, Türkiye'nin büyük şehirleri)
+        const cityCenters = {
+            "Adana": [37.0, 35.3213], "Adıyaman": [37.7648, 38.2786], "Afyonkarahisar": [38.7638, 30.5403], "Ağrı": [39.7191, 43.0503], "Amasya": [40.6539, 35.8336], "Ankara": [39.9334, 32.8597], "Antalya": [36.8969, 30.7133], "Artvin": [41.1828, 41.8183], "Aydın": [37.8450, 27.8396], "Balıkesir": [39.6484, 27.8826], "Bilecik": [40.1428, 29.9793], "Bingöl": [39.0626, 40.7696], "Bitlis": [38.4011, 42.1078], "Bolu": [40.5760, 31.5788], "Burdur": [37.7203, 30.2908], "Bursa": [40.1826, 29.0665], "Çanakkale": [40.1553, 26.4142], "Çankırı": [40.6013, 33.6134], "Çorum": [40.5506, 34.9556], "Denizli": [37.7765, 29.0864], "Diyarbakır": [37.9144, 40.2306], "Edirne": [41.6771, 26.5557], "Elazığ": [38.6743, 39.2232], "Erzincan": [39.7500, 39.5000], "Erzurum": [39.9043, 41.2679], "Eskişehir": [39.7767, 30.5206], "Gaziantep": [37.0662, 37.3833], "Giresun": [40.9128, 38.3895], "Gümüşhane": [40.4603, 39.4814], "Hakkari": [37.5744, 43.7408], "Hatay": [36.2021, 36.1600], "Isparta": [37.7648, 30.5566], "Mersin": [36.8121, 34.6415], "İstanbul": [41.0082, 28.9784], "İzmir": [38.4192, 27.1287], "Kars": [40.6013, 43.0975], "Kastamonu": [41.3897, 33.7827], "Kayseri": [38.7312, 35.4787], "Kırklareli": [41.7351, 27.2250], "Kırşehir": [39.1458, 34.1606], "Kocaeli": [40.8533, 29.8815], "Konya": [37.8746, 32.4932], "Kütahya": [39.4242, 29.9833], "Malatya": [38.3552, 38.3095], "Manisa": [38.6191, 27.4289], "Kahramanmaraş": [37.5736, 36.9371], "Mardin": [37.3212, 40.7245], "Muğla": [37.2153, 28.3636], "Muş": [38.9462, 41.7539], "Nevşehir": [38.6244, 34.7236], "Niğde": [37.9667, 34.6833], "Ordu": [40.9847, 37.8789], "Rize": [41.0256, 40.5177], "Sakarya": [40.7569, 30.3781], "Samsun": [41.2867, 36.33], "Siirt": [37.9274, 41.9456], "Sinop": [42.0267, 35.1551], "Sivas": [39.7477, 37.0179], "Tekirdağ": [40.9780, 27.5110], "Tokat": [40.3167, 36.5544], "Trabzon": [41.0015, 39.7178], "Tunceli": [39.1081, 39.5483], "Şanlıurfa": [37.1674, 38.7955], "Uşak": [38.6823, 29.4082], "Van": [38.5019, 43.4167], "Yozgat": [39.8181, 34.8147], "Zonguldak": [41.4564, 31.7987], "Aksaray": [38.3687, 34.0360], "Bayburt": [40.2567, 40.2249], "Karaman": [37.1759, 33.2287], "Kırıkkale": [39.8468, 33.5153], "Batman": [37.8812, 41.1351], "Şırnak": [37.4187, 42.4918], "Bartın": [41.6358, 32.3375], "Ardahan": [41.1105, 42.7022], "Iğdır": [39.9237, 44.0450], "Yalova": [40.6500, 29.2667], "Karabük": [41.2061, 32.6204], "Kilis": [36.7184, 37.1212], "Osmaniye": [37.0742, 36.2478], "Düzce": [40.8438, 31.1565]
+        };
+        // Şehir eşleştirme için normalize edilmiş map
+        const turkishMap = { 'İ':'I', 'ı':'i', 'Ş':'S', 'ş':'s', 'Ğ':'G', 'ğ':'g', 'Ü':'U', 'ü':'u', 'Ö':'O', 'ö':'o', 'Ç':'C', 'ç':'c' };
+        function normalize(str) { return str.replace(/[İıŞşĞğÜüÖöÇç]/g, c => turkishMap[c] || c).toLowerCase(); }
+        const cityCentersMap = {};
+        for (const key in cityCenters) { cityCentersMap[normalize(key)] = key; }
+        const startIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]});
+        const endIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png', iconSize: [32,32], iconAnchor: [16,32]});
+        const waypointIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', iconSize: [28,28], iconAnchor: [14,28]});
+
+        // Enter tuşu ile prompt rota oluştur
+        const promptInput = document.getElementById('prompt-input');
+        if (promptInput) {
+        promptInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('prompt-btn').click();
+            }
+        });
+        }
+    </script>
+</body>
+</html> 
