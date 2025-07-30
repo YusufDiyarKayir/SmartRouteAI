@@ -123,10 +123,10 @@ Projeyi çalıştırmak için aşağıdaki API anahtarları gereklidir:
 
 ```json
 {
-  "GoogleMaps": "AIzaSyCTl8gXrbbcPDOolXt8OpuzQghwXQl_N9Y",
-  "OpenWeatherMap": "0d97a7dabc935b1c450dbe82a3234617",
-  "AbstractAPI": "e07f6c1c-7dad-4745-8779-d91c690c059c",
-  "AzureTextAnalytics": "your-azure-key"
+  "GoogleMaps": "",
+  "OpenWeatherMap": "",
+  "AbstractAPI": "",
+  "AzureTextAnalytics": ""
 }
 ```
 
@@ -137,13 +137,6 @@ Projeyi çalıştırmak için aşağıdaki API anahtarları gereklidir:
 - **Ölçeklenebilir**: Mikroservis mimarisi ile kolay ölçeklendirme
 - **Cache Sistemi**: 5 dakikalık önbellek ile hızlı erişim
 
-## 🛠️ Geliştirme
-
-### Yeni Özellik Ekleme
-1. Backend servisini oluşturun
-2. Controller'a endpoint ekleyin
-3. Frontend'i güncelleyin
-4. Test edin ve commit edin
 
 ### Test Etme
 ```bash
@@ -154,44 +147,16 @@ dotnet test
 python -m pytest tests/
 ```
 
-## 📝 Commit Geçmişi
-
-### Son Güncellemeler
-- ✅ Gerçek zamanlı trafik AI sistemi kaldırıldı
-- ✅ Proje eski stabil haline döndürüldü
-- ✅ Anlamsız prompt tespiti eklendi
-- ✅ UI/UX iyileştirmeleri yapıldı
-- ✅ Hata yönetimi geliştirildi
-
-## 🤝 Katkıda Bulunma
-
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`)
-3. Değişikliklerinizi commit edin (`git commit -m 'Add some AmazingFeature'`)
-4. Branch'inizi push edin (`git push origin feature/AmazingFeature`)
-5. Pull Request oluşturun
-
 ## 📄 Lisans
 
 Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
 
 ## 👨‍💻 Geliştirici
-
 **Yusuf Diyar Kayır**
 - GitHub: [@YusufDiyarKayir](https://github.com/YusufDiyarKayir)
+- Instagram: [@YusufDiyarKayir](https://www.instagram.com/yusufdkayir/)
 - LinkedIn: [Yusuf Diyar Kayır](https://linkedin.com/in/yusufdiyarkayir)
 
-## 🙏 Teşekkürler
-
-- Google Maps API
-- OpenWeatherMap API
-- Abstract API
-- Azure Cognitive Services
-- Leaflet.js
-- ASP.NET Core
-
----
 
 **Son Güncelleme:** 15 Ocak 2024
-**Versiyon:** 2.0.0
 **Durum:** ✅ Aktif Geliştirme 
