@@ -48,10 +48,50 @@
     }
 
     .main-content {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 30px;
-        margin-bottom: 30px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto 30px auto;
+        align-items: flex-start;
+    }
+
+    #map {
+        flex: 1;
+        min-height: 600px;
+    }
+
+        #route-options {
+        width: 320px;
+        height: 600px;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 0.5em;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+        .main-content {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        #map, #route-options {
+            max-width: 98vw;
+            margin: 1rem auto;
+        }
+        
+        #route-options {
+            min-width: auto;
+            max-height: 400px;
+        }
     }
 
     .sidebar {
@@ -69,11 +109,13 @@
         border-radius: 20px;
         padding: 20px;
         box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-}
+        flex: 1;
+        min-height: 600px;
+    }
 
 #map {
         height: 600px;
-    width: 100%;
+        width: 100%;
         border-radius: 15px;
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -490,13 +532,14 @@
         backdrop-filter: blur(10px);
         border-radius: 15px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        padding: 20px;
+        padding: 12px;
     display: flex;
     align-items: center;
         gap: 15px;
     cursor: pointer;
         transition: all 0.3s ease;
         border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 5px;
 }
 
 .route-card:hover {
@@ -723,76 +766,72 @@
         </div>
 
         <div class="main-content">
-            <div class="sidebar">
-                <div class="control-panel">
-                    <h3><i class="fas fa-cog"></i> Rota Ayarları</h3>
-                    
-                    <div class="input-group">
-                        <label for="from-place">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Başlangıç Noktası
-                        </label>
-                        <select id="from-place" class="form-control">
-                            <option value="">Haritadan seçin</option>
-                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
-                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
-                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
-            </select>
-                        <span id="from-coord" class="coord-display">Seçilmedi</span>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="to-place">
-                            <i class="fas fa-flag-checkered"></i>
-                            Hedef Nokta
-        </label>
-                        <select id="to-place" class="form-control">
-                            <option value="">Haritadan seçin</option>
-                <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
-                <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
-                <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
-            </select>
-                        <span id="to-coord" class="coord-display">Seçilmedi</span>
-                    </div>
-
-                    <div class="datetime-group">
-                        <div class="input-group">
-                            <label for="date-input">
-                                <i class="fas fa-calendar"></i>
-                                Tarih
-        </label>
-                            <input type="date" id="date-input" class="form-control">
-                        </div>
-                        <div class="input-group">
-                            <label for="time-input">
-                                <i class="fas fa-clock"></i>
-                                Saat
-        </label>
-                            <input type="time" id="time-input" class="form-control">
-    </div>
-                    </div>
-
-                    <button id="route-btn" class="btn-primary btn-full">
-                        <i class="fas fa-search"></i>
-                        Rotayı Hesapla
-                    </button>
-
-                    <button id="reset-btn" class="btn-secondary btn-full">
-                        <i class="fas fa-undo"></i>
-                        Sıfırla
-                    </button>
-                </div>
-            </div>
-
             <div class="map-container">
                 <div id="map"></div>
             </div>
+            <div id="route-options"></div>
         </div>
 
         <!-- Results Section -->
         <div id="result"></div>
-        <div id="route-options"></div>
         <div id="route-details"></div>
+        
+        <!-- Rota Ayarları - Alt Kısım -->
+        <div class="sidebar" style="display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:2em auto;padding:1.5em 2em;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.1);flex-wrap:wrap;gap:1em;">
+            <div class="input-group" style="display:flex;align-items:center;gap:0.5em;">
+                <label for="from-place" style="margin:0;white-space:nowrap;">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Başlangıç:
+                </label>
+                <select id="from-place" class="form-control" style="margin:0;">
+                    <option value="">Haritadan seçin</option>
+                    <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                    <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                    <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+                </select>
+                <span id="from-coord" class="coord-display" style="margin:0;">Seçilmedi</span>
+            </div>
+
+            <div class="input-group" style="display:flex;align-items:center;gap:0.5em;">
+                <label for="to-place" style="margin:0;white-space:nowrap;">
+                    <i class="fas fa-flag-checkered"></i>
+                    Hedef:
+                </label>
+                <select id="to-place" class="form-control" style="margin:0;">
+                    <option value="">Haritadan seçin</option>
+                    <option value="41.038946,28.813249">LCWAIKIKI GENEL MUDURLUK</option>
+                    <option value="41.060634,28.659207">LCWAIKIKI LOJISTIK MERKEZ</option>
+                    <option value="40.653129,29.354463">LCWAIKIKI YALOVA DEPO</option>
+                </select>
+                <span id="to-coord" class="coord-display" style="margin:0;">Seçilmedi</span>
+            </div>
+
+            <div class="input-group" style="display:flex;align-items:center;gap:0.5em;">
+                <label for="date-input" style="margin:0;white-space:nowrap;">
+                    <i class="fas fa-calendar"></i>
+                    Tarih:
+                </label>
+                <input type="date" id="date-input" class="form-control" style="margin:0;">
+            </div>
+
+            <div class="input-group" style="display:flex;align-items:center;gap:0.5em;">
+                <label for="time-input" style="margin:0;white-space:nowrap;">
+                    <i class="fas fa-clock"></i>
+                    Saat:
+                </label>
+                <input type="time" id="time-input" class="form-control" style="margin:0;">
+            </div>
+
+            <button id="route-btn" class="btn-primary" style="margin:0;padding:0.7em 1.5em;">
+                <i class="fas fa-search"></i>
+                Rotayı Hesapla
+            </button>
+
+            <button id="reset-btn" class="btn-secondary" style="margin:0;padding:0.6em 1.2em;">
+                <i class="fas fa-undo"></i>
+                Sıfırla
+            </button>
+        </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Dakikayı "X Saat Y Dakika" formatına çeviren yardımcı fonksiyon
@@ -878,11 +917,14 @@
 
         function showRouteOptions(routes) {
             const container = document.getElementById('route-options');
-            container.innerHTML = '';
-            if (!routes || routes.length === 0) return;
+            container.innerHTML = '<h3 style="margin:0 0 1rem 0;color:#2a3d66;font-size:1.2rem;">🛣️ Alternatif Rotalar</h3>';
+            if (!routes || routes.length === 0) {
+                container.innerHTML += '<p style="color:#666;text-align:center;margin:1rem 0;">Henüz rota oluşturulmadı</p>';
+                return;
+            }
             
             const header = document.createElement('div');
-            header.style.cssText = 'margin: 20px 0 15px 0; font-size: 1.2rem; font-weight: 600; color: white; text-align: center;';
+            header.style.cssText = 'margin: 0; font-size: 1.2rem; font-weight: 600; color: white; text-align: center;';
             header.innerHTML = '<i class="fas fa-route"></i> Alternatif Rotalar';
             container.appendChild(header);
             
@@ -896,13 +938,14 @@
                 let holidayBadge = '';
                 let aiBadge = '';
                 
+                //#endregion
                 if (route.isHoliday || route.holidayName) {
                     const holidayColor = route.isHoliday ? '#ff6b6b' : '#28a745';
                     holidayBadge = `<span style="background: ${holidayColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px;">
                         <i class="fas fa-calendar-alt"></i> ${route.holidayName || 'Tatil'}
                     </span>`;
                 }
-                
+                //#region AI Optimizasyonu
                 if (route.aiOptimized) {
                     const aiColor = route.aiOptimizationScore > 0.7 ? '#28a745' : route.aiOptimizationScore > 0.5 ? '#ffc107' : '#dc3545';
                     aiBadge = `<span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px;">
@@ -925,12 +968,12 @@
                             ${aiBadge}
                         </div>
                         <div style="display: flex; gap: 15px; margin-top: 8px;">
-                            <span class="route-info"><i class="fas fa-road"></i> ${route.distanceKm} km</span>
+                            <span class="route-info"><i class="fas fa-road"></i> ${route.distanceKm || 0} km</span>
                             <span class="route-info"><i class="fas fa-clock"></i> ${durationDisplay}</span>
                         </div>
                         ${route.weatherImpact ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;"><i class="fas fa-exclamation-triangle"></i> ${route.weatherImpact}</div>` : ''}
                     </div>
-                    <span class="route-toll">${route.tollClass}</span>`;
+                    <span class="route-toll">${route.tollClass || 'Standart'}</span>`;
                 container.appendChild(div);
             });
         }
@@ -975,13 +1018,13 @@
                 <div class="route-details-card">
                     ${aiInfo}
                     ${holidayInfo}
-                    <div><i class="fas fa-road"></i> <b>Mesafe:</b> ${route.distanceKm} km</div>
+                    <div><i class="fas fa-road"></i> <b>Mesafe:</b> ${route.distanceKm || 0} km</div>
                     <div><i class="fas fa-clock"></i> <b>Orijinal Süre:</b> ${formatDuration(route.durationMin || route.estimatedDurationMinutes)}</div>
                     <div><i class="fas fa-clock"></i> <b>${route.aiOptimized ? 'AI Optimize' : 'Düzeltilmiş'} Süre:</b> <span style="color:${route.adjustedDurationMin > (route.durationMin || route.estimatedDurationMinutes) ? '#dc3545' : '#28a745'};font-weight:bold;">${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</span></div>
                     <div><i class="fas fa-calendar-check"></i> <b>Tahmini varış:</b> ${route.arrivalStr || route.arrivalstr || '-'}</div>
                     <div><i class="fas fa-cloud-sun"></i> <b>Beklenen hava:</b> <span class="weather-main">${route.weatherDesc || route.weatherdesc ? (route.weatherDesc || route.weatherdesc).charAt(0).toUpperCase() + (route.weatherDesc || route.weatherdesc).slice(1) : (route.weather || '-')}</span></div>
                     <div><i class="fas fa-exclamation-triangle"></i> <b>${route.aiOptimized ? 'AI, Hava ve Tatil' : 'Hava ve Tatil'} Etkisi:</b> <span class="weather-impact">${route.weatherImpact || 'Yok'}</span></div>
-                    <div><i class="fas fa-highway"></i> <b>Otoyol:</b> <span class="route-toll">${route.tollClass}</span></div>
+                    <div><i class="fas fa-highway"></i> <b>Otoyol:</b> <span class="route-toll">${route.tollClass || 'Standart'}</span></div>
                     <div><i class="fas fa-credit-card"></i> <b>Ücretli geçiş:</b> <span class="route-toll">${route.tollInfo || route.tollinfo || '-'}</span></div>
                 </div>
             `;
@@ -1007,13 +1050,14 @@
                 const latlngs = decodePolyline(polylineData);
                 if (latlngs.length > 1) {
                     routeLine = L.polyline(latlngs, {
-                        color: '#e74c3c', 
-                        weight: 6, 
-                        opacity: 0.95,
+                        color: '#6b5ac6', 
+                        weight: 8, 
+                        opacity: 0.8,
                         smoothFactor: 1,
                         lineCap: 'round',
                         lineJoin: 'round'
                     }).addTo(map);
+                    routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                     updateRouteStyle();
                 } else {
@@ -1102,27 +1146,27 @@
             const zoom = map.getZoom();
             if (zoom < 12) {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 8, 
-                    opacity: 0.9,
+                    color: '#6b5ac6', 
+                    weight: 10, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
                 });
             } else if (zoom < 15) {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 6, 
-                    opacity: 0.95,
+                    color: '#6b5ac6', 
+                    weight: 8, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
                 });
             } else {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 4, 
-                    opacity: 1.0,
+                    color: '#6b5ac6', 
+                    weight: 6, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
@@ -1174,13 +1218,14 @@
                     if (result.polyline) {
                         const latlngs = decodePolyline(result.polyline);
                         routeLine = L.polyline(latlngs, {
-                            color: '#e74c3c', 
-                            weight: 6, 
-                            opacity: 0.95,
+                            color: '#6b5ac6', 
+                            weight: 8, 
+                            opacity: 0.8,
                             smoothFactor: 1,
                             lineCap: 'round',
                             lineJoin: 'round'
                         }).addTo(map);
+                        routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                         map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                         updateRouteStyle();
                     } else if (result.distanceKm > 0) {
@@ -1643,36 +1688,39 @@
                         const latlngs = decodePolyline(alt.polyline);
                         if (latlngs.length > 1) {
                             routeLine = L.polyline(latlngs, {
-                                color: '#e74c3c', 
-                                weight: 4, 
-                                opacity: 0.9,
+                                color: '#6b5ac6', 
+                                weight: 6, 
+                                opacity: 0.8,
                                 smoothFactor: 1
                             }).addTo(map);
+                            routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                             map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                             updateRouteStyle();
                         } else {
                             console.warn('Polyline decoded but insufficient points');
                             if (bounds.length > 1) {
                                 routeLine = L.polyline(bounds, {
-                                    color: '#e74c3c', 
-                                    weight: 6, 
-                                    opacity: 0.95,
+                                    color: '#6b5ac6', 
+                                    weight: 8, 
+                                    opacity: 0.8,
                                     smoothFactor: 1,
                                     lineCap: 'round',
                                     lineJoin: 'round'
                                 }).addTo(map);
+                                routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                             }
                         }
                     } else if (bounds.length > 1) {
                         console.log('Using bounds for route line');
                         routeLine = L.polyline(bounds, {
-                            color: '#e74c3c', 
-                            weight: 6, 
-                            opacity: 0.95,
+                            color: '#6b5ac6', 
+                            weight: 8, 
+                            opacity: 0.8,
                             smoothFactor: 1,
                             lineCap: 'round',
                             lineJoin: 'round'
                         }).addTo(map);
+                        routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     } else {
                         console.warn('No polyline or bounds available for route');
                     }
@@ -1694,6 +1742,8 @@
         const startIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]});
         const endIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png', iconSize: [32,32], iconAnchor: [16,32]});
         const waypointIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', iconSize: [28,28], iconAnchor: [14,28]});
+
+
 
         // Enter tuşu ile prompt rota oluştur
         const promptInput = document.getElementById('prompt-input');

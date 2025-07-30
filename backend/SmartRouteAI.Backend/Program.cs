@@ -13,6 +13,7 @@ builder.Services.AddSingleton<Services.MapService>();
 builder.Services.AddSingleton<Services.AdvancedWeatherService>();
 builder.Services.AddSingleton<Services.HolidayService>();
 builder.Services.AddSingleton<Services.AIModelService>();
+
 builder.Services.AddAuthorization();
 
 // CORS (Cross-Origin Resource Sharing) ayarları ekleniyor

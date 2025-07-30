@@ -23,10 +23,8 @@ h2 {
 }
 
 #map {
-    height: 70vh;
+    height: 600px;
     width: 100%;
-    max-width: 900px;
-    margin: 2rem auto;
     border-radius: 1.25rem;
     box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.1);
 }
@@ -134,27 +132,35 @@ h2 {
 }
 
 #route-options {
-    max-width: 900px;
-    margin: 1rem auto;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
 .route-card {
-    background-color: #fff;
+    background-color: #f8fafd;
     border-radius: 0.75rem;
     box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
-    padding: 1rem;
+    padding: 0.6rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     cursor: pointer;
-    transition: transform 0.2s ease-in-out;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    margin-bottom: 0.3rem;
 }
 
 .route-card:hover {
     transform: scale(1.02);
+    border-color: #2a3d66;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.route-card.selected {
+    border-color: #2a3d66;
+    background-color: #e8f0ff;
+    box-shadow: 0 0.5rem 1rem rgba(42, 61, 102, 0.2);
 }
 
 .route-title {
@@ -243,8 +249,21 @@ h2 {
     flex-direction: row;
     justify-content: center;
     gap: 2rem;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    align-items: flex-start;
+}
+
+#map {
+    flex: 1;
+    min-height: 600px;
+}
+
+#route-options {
+    width: 320px;
+    height: 600px;
+    overflow-y: auto;
+    flex-shrink: 0;
 }
 
 @media (max-width: 900px) {
@@ -253,9 +272,14 @@ h2 {
         align-items: stretch;
     }
 
-    #preset-routes, #map {
+    #map, #route-options {
         max-width: 98vw;
         margin: 1rem auto;
+    }
+    
+    #route-options {
+        min-width: auto;
+        max-height: 400px;
     }
 }
 
@@ -292,8 +316,11 @@ h2 {
     </div>
     <div id="main-layout">
         <div id="map"></div>
+        <div id="route-options" style="width:320px;height:600px;margin:0;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:0.5em;overflow-y:auto;flex-shrink:0;"></div>
     </div>
-    <div class="coords">
+    <div id="result" style="font-weight:bold;"></div>
+    <div id="route-details" style="max-width:900px;margin:1em auto 0 auto;"></div>
+    <div class="coords" style="display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:2em auto;padding:1.5em 2em;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-wrap:wrap;gap:1em;">
         <label>Başlangıç:
             <select id="from-place">
                 <option value="">Haritadan seç</option>
@@ -318,12 +345,9 @@ h2 {
         <label>Saat:
             <input type="time" id="time-input" style="margin-left:0.5em;">
         </label>
+        <button id="route-btn" style="padding:0.7em 1.5em;font-size:1.1em;background:#2a3d66;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px 0 rgba(60,60,100,0.10);">Rotayı Hesapla</button>
+        <button id="reset-btn" style="padding:0.6em 1.2em;font-size:1em;background:#e74c3c;color:#fff;border:none;border-radius:8px;cursor:pointer;">Sıfırla</button>
     </div>
-    <button id="route-btn" style="display:block;margin:1em auto 1em auto;padding:0.7em 1.5em;font-size:1.1em;background:#2a3d66;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px 0 rgba(60,60,100,0.10);">Rotayı Hesapla</button>
-    <div id="result" style="font-weight:bold;"></div>
-    <div id="route-options" style="max-width:900px;margin:1em auto 0 auto;"></div>
-    <div id="route-details" style="max-width:900px;margin:1em auto 0 auto;"></div>
-    <button id="reset-btn">Seçimleri Sıfırla</button>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // Polyline decode (Google polyline formatı) - Sadeleştirilmiş versiyon
@@ -391,17 +415,20 @@ h2 {
 
         function showRouteOptions(routes) {
             const container = document.getElementById('route-options');
-            container.innerHTML = '';
-            if (!routes || routes.length === 0) return;
+            container.innerHTML = '<h3 style="margin:0;color:#2a3d66;font-size:1.2rem;">🛣️ Alternatif Rotalar</h3>';
+            if (!routes || routes.length === 0) {
+                container.innerHTML += '<p style="color:#666;text-align:center;margin:1rem 0;">Henüz rota oluşturulmadı</p>';
+                return;
+            }
             routes.forEach((route, idx) => {
                 console.log(`[FRONTEND] Route ${idx}:`, route);
                 const div = document.createElement('div');
                 div.className = 'route-card' + (selectedRouteIndex === idx ? ' selected' : '');
                 div.onclick = function() { selectRoute(idx); };
-                div.innerHTML = `<span class="route-title">${route.title}</span>
-                    <span class="route-info">Mesafe: ${route.distanceKm} km</span>
+                div.innerHTML = `<span class="route-title">${route.title || `Rota ${idx + 1}`}</span>
+                    <span class="route-info">Mesafe: ${route.distanceKm || 0} km</span>
                     <span class="route-info">Süre: ${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</span>
-                    <span class="route-toll">Otoyol: ${route.tollClass}</span>`;
+                    <span class="route-toll">Otoyol: ${route.tollClass || 'Standart'}</span>`;
                 container.appendChild(div);
             });
         }
@@ -411,12 +438,12 @@ h2 {
             if (!route) { details.innerHTML = ''; return; }
             details.innerHTML = `
                 <div class="route-details-card">
-                    <div><b>Mesafe:</b> ${route.distanceKm} km</div>
+                    <div><b>Mesafe:</b> ${route.distanceKm || 0} km</div>
                     <div><b>Süre:</b> ${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</div>
                     <div><b>Tahmini varış:</b> ${route.arrivalStr || route.arrivalstr || '-'} </div>
                     <div><b>Beklenen hava:</b> <span class="weather-main">${route.weatherDesc || route.weatherdesc ? (route.weatherDesc || route.weatherdesc).charAt(0).toUpperCase() + (route.weatherDesc || route.weatherdesc).slice(1) : (route.weather || '-')}</span></div>
                     <div><b>Hava etkisi:</b> <span class="weather-impact">${route.weatherImpact || 'Yok'}</span></div>
-                    <div><b>Otoyol:</b> <span class="route-toll">${route.tollClass}</span></div>
+                    <div><b>Otoyol:</b> <span class="route-toll">${route.tollClass || 'Standart'}</span></div>
                     <div><b>Ücretli geçiş:</b> <span class="route-toll">${route.tollInfo || route.tollinfo || '-'}</span></div>
                 </div>
             `;
@@ -431,13 +458,14 @@ h2 {
                 const latlngs = decodePolyline(route.polyline);
                 if (latlngs.length > 1) {
                     routeLine = L.polyline(latlngs, {
-                        color: '#e74c3c', 
-                        weight: 6, 
-                        opacity: 0.95,
+                        color: '#6b5ac6', 
+                        weight: 8, 
+                        opacity: 0.5,
                         smoothFactor: 1,
                         lineCap: 'round',
                         lineJoin: 'round'
                     }).addTo(map);
+                    routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                     updateRouteStyle();
                 } else {
@@ -524,27 +552,27 @@ h2 {
             const zoom = map.getZoom();
             if (zoom < 12) {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 8, 
-                    opacity: 0.9,
+                    color: '#6b5ac6', 
+                    weight: 10, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
                 });
             } else if (zoom < 15) {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 6, 
-                    opacity: 0.95,
+                    color: '#6b5ac6', 
+                    weight: 8, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
                 });
             } else {
                 routeLine.setStyle({ 
-                    color: '#e74c3c', 
-                    weight: 4, 
-                    opacity: 1.0,
+                    color: '#6b5ac6', 
+                    weight: 6, 
+                    opacity: 0.8,
                     smoothFactor: 1,
                     lineCap: 'round',
                     lineJoin: 'round'
@@ -596,13 +624,14 @@ h2 {
                     if (result.polyline) {
                         const latlngs = decodePolyline(result.polyline);
                         routeLine = L.polyline(latlngs, {
-                            color: '#e74c3c', 
-                            weight: 6, 
-                            opacity: 0.95,
+                            color: '#6b5ac6', 
+                            weight: 8, 
+                            opacity: 0.8,
                             smoothFactor: 1,
                             lineCap: 'round',
                             lineJoin: 'round'
                         }).addTo(map);
+                        routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                         map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                         updateRouteStyle();
                     } else if (result.distanceKm > 0) {
@@ -630,11 +659,12 @@ h2 {
                 const latlngs = decodePolyline(polyline);
                 if (latlngs.length > 1) {
                     routeLine = L.polyline(latlngs, {
-                        color: '#e74c3c', 
-                        weight: 4, 
-                        opacity: 0.9,
+                        color: '#6b5ac6', 
+                        weight: 6, 
+                        opacity: 0.8,
                         smoothFactor: 1
                     }).addTo(map);
+                    routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
                 }
             }
@@ -1045,13 +1075,25 @@ h2 {
                     }
                     
                 } else {
-                    promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                    const errorData = await resp.json();
+                    if (errorData.error && errorData.error.includes("Sizi anlayamadım")) {
+                        promptResult.innerHTML = `<div style="color:#f44336;font-size:1.2em;font-weight:bold;">❌ ${errorData.error}</div>`;
+                        if (errorData.suggestion) {
+                            promptResult.innerHTML += `<div style="color:#666;margin-top:0.5em;font-size:1em;">💡 ${errorData.suggestion}</div>`;
+                        }
+                    } else {
+                        promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                    }
                     weatherResult.innerHTML = '<div style="color:#f44336;">❌ Hava durumu analizi yapılamadı!</div>';
                 }
                 
             } catch (error) {
                 console.error('Hata:', error);
-                promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                if (error.message && error.message.includes("Sizi anlayamadım")) {
+                    promptResult.innerHTML = `<div style="color:#f44336;font-size:1.2em;font-weight:bold;">❌ ${error.message}</div>`;
+                } else {
+                    promptResult.innerHTML = '<div style="color:#f44336;">❌ Sunucuya ulaşılamadı veya hata oluştu.</div>';
+                }
                 weatherResult.innerHTML = '<div style="color:#f44336;">❌ Hava durumu analizi yapılamadı!</div>';
             }
         });

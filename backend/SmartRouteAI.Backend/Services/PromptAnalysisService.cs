@@ -60,8 +60,95 @@ namespace Services
             return months.TryGetValue(monthName, out var number) ? number : "01";
         }
 
+        // Anlamsız prompt'ları tespit eden validasyon metodu
+        private bool IsMeaninglessPrompt(string prompt)
+        {
+            if (string.IsNullOrWhiteSpace(prompt))
+                return true;
+
+            var promptLower = prompt.ToLower().Trim();
+            
+            // Çok kısa prompt'lar (2 karakterden az)
+            if (promptLower.Length < 2)
+                return true;
+
+            // Sadece sayılar, semboller veya tekrarlayan karakterler
+            if (Regex.IsMatch(promptLower, @"^[\d\s\W]+$"))
+                return true;
+
+            // Sadece tekrarlayan karakterler (aaa, bbb, 111 gibi)
+            if (Regex.IsMatch(promptLower, @"^(.)\1+$"))
+                return true;
+
+            // Anlamsız kelime kombinasyonları - daha katı kontrol
+            var meaninglessPatterns = new[]
+            {
+                @"^(test|deneme|asdf|qwerty|xyz|abc|123|456|789)$", // Test kelimeleri
+                @"^(merhaba|selam|hi|hello|bye|görüşürüz)$", // Sadece selamlaşma
+                @"^(nasılsın|iyi|kötü|güzel)$", // Sadece durum belirten kelimeler
+            };
+
+            foreach (var pattern in meaninglessPatterns)
+            {
+                if (Regex.IsMatch(promptLower, pattern))
+                    return true;
+            }
+
+            // En az bir Türkiye şehri veya İstanbul ilçesi içermeli
+            bool hasValidLocation = false;
+            
+            // İstanbul ilçelerini kontrol et
+            foreach (var district in _istanbulDistricts)
+            {
+                if (promptLower.Contains(district.ToLower()))
+                {
+                    hasValidLocation = true;
+                    break;
+                }
+            }
+            
+            // Türkiye şehirlerini kontrol et
+            if (!hasValidLocation)
+            {
+                foreach (var city in _turkeyCities)
+                {
+                    if (promptLower.Contains(city.ToLower()))
+                    {
+                        hasValidLocation = true;
+                        break;
+                    }
+                }
+            }
+
+            // Rota ile ilgili anahtar kelimeler var mı kontrol et
+            var routeKeywords = new[]
+            {
+                "git", "gideyim", "gidelim", "gidiyorum", "gidiyoruz",
+                "rota", "yol", "güzergah", "harita", "navigasyon",
+                "nereden", "nereye", "başlangıç", "varış", "hedef",
+                "ulaşım", "seyahat", "yolculuk", "gezi", "tur",
+                "otobüs", "tren", "uçak", "araba", "araç", "vasıta",
+                "köprü", "otoyol", "karayolu", "yol", "cadde", "sokak"
+            };
+
+            bool hasRouteKeyword = routeKeywords.Any(keyword => promptLower.Contains(keyword));
+
+            // Eğer geçerli bir lokasyon yoksa ve rota ile ilgili anahtar kelime de yoksa anlamsız kabul et
+            if (!hasValidLocation && !hasRouteKeyword)
+                return true;
+
+            return false;
+        }
+
         public async Task<PromptAnalysisResult> AnalyzePromptAsync(string prompt)
         {
+            // Anlamsız prompt kontrolü
+            if (IsMeaninglessPrompt(prompt))
+            {
+                Console.WriteLine($"[PROMPT] Anlamsız prompt tespit edildi: '{prompt}'");
+                throw new InvalidOperationException("Sizi anlayamadım, lütfen tekrar bir rota oluşturunuz.");
+            }
+
             // 1. Azure ile varlık ve anahtar kelime çıkarımı
             var entities = await _client.RecognizeEntitiesAsync(prompt);
             var keyPhrases = await _client.ExtractKeyPhrasesAsync(prompt);
@@ -142,6 +229,14 @@ namespace Services
                     }
                 }
             }
+
+            // Eğer hala hiç şehir bulunamadıysa, anlamsız prompt olarak kabul et
+            if (foundCities.Count == 0)
+            {
+                Console.WriteLine($"[PROMPT] Hiç şehir bulunamadı: '{prompt}'");
+                throw new InvalidOperationException("Sizi anlayamadım, lütfen tekrar bir rota oluşturunuz.");
+            }
+
             // 3. Azure'dan dönen entity'ler arasında şehir/yer olanları ekle
             var azureCities = entities.Value
                 .Where(e => e.Category == "Location" || e.Category == "Address" || e.Category == "Organization")
