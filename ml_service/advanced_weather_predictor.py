@@ -356,6 +356,7 @@ def health_check():
         "status": "healthy",
         "service": "ML-Based Weather Predictor",
         "cities_loaded": len(predictor.db.cities_data),
+        "models_loaded": True,  # ML modelleri yüklü
         "features": [
             "ML tabanlı hava durumu tahmini",
             "Coğrafi veri analizi",

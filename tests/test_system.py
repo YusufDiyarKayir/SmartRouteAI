@@ -83,15 +83,15 @@ class SmartRouteAITestSystem:
     def test_model_files(self) -> bool:
         """Model dosyalarının varlığını kontrol et"""
         required_models = [
-            "../models/traffic_prediction_model.h5",
+            "../models/traffic_prediction_model.pkl",
             "../models/traffic_prediction_scaler.pkl",
             "../models/traffic_prediction_metadata.json",
-            "../models/route_optimization_model.h5",
+            "../models/route_optimization_duration_model.pkl",
             "../models/route_optimization_scaler.pkl",
             "../models/route_optimization_metadata.json",
             "../models/weather_model.pkl",
             "../models/temperature_model.pkl",
-            "../models/historical_weather_model.pkl"
+            "../models/traffic_model.pkl"
         ]
         
         missing_models = []
@@ -144,15 +144,7 @@ class SmartRouteAITestSystem:
         """Rota optimizasyonu testi"""
         try:
             payload = {
-                "source": "İstanbul",
-                "destination": "Ankara",
-                "waypoints": [],
-                "requests": ["Hava koşulları: yağmurlu", "Seyahat tarihi: 2025-07-15"],
-                "bridgeDirectives": [],
-                "highwayDirectives": [],
-                "weatherConditions": ["yağmurlu"],
-                "travelDate": "2025-07-15",
-                "travelTime": "10:00"
+                "prompt": "İstanbul'dan Ankara'ya git, hava koşulları yağmurlu, seyahat tarihi 15 Temmuz 2025"
             }
             
             response = requests.post(f"{self.backend_url}/api/route/plan", 
@@ -236,15 +228,7 @@ class SmartRouteAITestSystem:
             
             # Hızlı bir rota hesaplama testi
             payload = {
-                "source": "İstanbul",
-                "destination": "Ankara",
-                "waypoints": [],
-                "requests": [],
-                "bridgeDirectives": [],
-                "highwayDirectives": [],
-                "weatherConditions": [],
-                "travelDate": "2025-07-15",
-                "travelTime": "10:00"
+                "prompt": "İstanbul'dan Ankara'ya git"
             }
             
             response = requests.post(f"{self.backend_url}/api/route/plan", 

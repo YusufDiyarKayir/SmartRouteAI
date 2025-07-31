@@ -22,19 +22,22 @@ class AIService:
         """Eğitilmiş modelleri yükle"""
         try:
             # Model dosyalarının varlığını kontrol et
-            traffic_model_path = '../models/traffic_prediction'
-            route_model_path = '../models/route_optimization'
+            traffic_model_path = '../models/traffic_prediction_model.pkl'
+            route_model_path = '../models/route_optimization_duration_model.pkl'
             
-            if (os.path.exists(f"{traffic_model_path}_model.h5") and 
-                os.path.exists(f"{route_model_path}_model.h5")):
+            if (os.path.exists(traffic_model_path) and 
+                os.path.exists(route_model_path)):
                 
-                self.traffic_ai.load_model(traffic_model_path)
-                self.route_ai.load_model(route_model_path)
+                # Modelleri yükle
+                self.traffic_ai.load_model('../models/traffic_prediction')
+                self.route_ai.load_model('../models/route_optimization')
                 self.models_loaded = True
                 print("AI modelleri başarıyla yüklendi!")
                 return True
             else:
                 print("Model dosyaları bulunamadı. Modeller eğitilmeli.")
+                print(f"Traffic model path: {traffic_model_path}")
+                print(f"Route model path: {route_model_path}")
                 return False
         except Exception as e:
             print(f"Model yükleme hatası: {e}")
