@@ -298,38 +298,51 @@ namespace Services
             // Tarih analizi
             string? travelDate = null;
             
-            // Gün ay formatı (2025 yılı olarak algıla)
-            var dayMonthPattern = @"(\d{1,2})\s*(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)";
-            var dayMonthMatch = Regex.Match(prompt, dayMonthPattern, RegexOptions.IgnoreCase);
-            if (dayMonthMatch.Success)
+            // DD.MM.YYYY formatı (12.02.2026)
+            var dotDatePattern = @"(\d{1,2})\.(\d{1,2})\.(\d{4})";
+            var dotDateMatch = Regex.Match(prompt, dotDatePattern);
+            if (dotDateMatch.Success)
             {
-                var day = dayMonthMatch.Groups[1].Value;
-                var month = dayMonthMatch.Groups[2].Value;
-                var year = 2025; // 2025 yılı olarak sabit
-                travelDate = $"{year}-{GetMonthNumber(month)}-{day.PadLeft(2, '0')}";
+                var day = dotDateMatch.Groups[1].Value;
+                var month = dotDateMatch.Groups[2].Value;
+                var year = dotDateMatch.Groups[3].Value;
+                travelDate = $"{year}-{month.PadLeft(2, '0')}-{day.PadLeft(2, '0')}";
             }
             else
             {
-                // Gün ay yıl formatı
-                var fullDatePattern = @"(\d{1,2})\s*(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)\s*(\d{4})";
-                var fullDateMatch = Regex.Match(prompt, fullDatePattern, RegexOptions.IgnoreCase);
-                if (fullDateMatch.Success)
+                // Gün ay formatı (2025 yılı olarak algıla)
+                var dayMonthPattern = @"(\d{1,2})\s*(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)";
+                var dayMonthMatch = Regex.Match(prompt, dayMonthPattern, RegexOptions.IgnoreCase);
+                if (dayMonthMatch.Success)
                 {
-                    var day = fullDateMatch.Groups[1].Value;
-                    var month = fullDateMatch.Groups[2].Value;
-                    var year = fullDateMatch.Groups[3].Value;
+                    var day = dayMonthMatch.Groups[1].Value;
+                    var month = dayMonthMatch.Groups[2].Value;
+                    var year = 2025; // 2025 yılı olarak sabit
                     travelDate = $"{year}-{GetMonthNumber(month)}-{day.PadLeft(2, '0')}";
                 }
                 else
                 {
-                    // Sadece ay isimleri (2025 yılı olarak algıla)
-                    var monthPattern = @"(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)";
-                    var monthMatch = Regex.Match(prompt, monthPattern, RegexOptions.IgnoreCase);
-                    if (monthMatch.Success)
+                    // Gün ay yıl formatı
+                    var fullDatePattern = @"(\d{1,2})\s*(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)\s*(\d{4})";
+                    var fullDateMatch = Regex.Match(prompt, fullDatePattern, RegexOptions.IgnoreCase);
+                    if (fullDateMatch.Success)
                     {
-                        var month = monthMatch.Groups[1].Value;
-                        var year = 2025; // 2025 yılı olarak sabit
-                        travelDate = $"{year}-{GetMonthNumber(month)}-01";
+                        var day = fullDateMatch.Groups[1].Value;
+                        var month = fullDateMatch.Groups[2].Value;
+                        var year = fullDateMatch.Groups[3].Value;
+                        travelDate = $"{year}-{GetMonthNumber(month)}-{day.PadLeft(2, '0')}";
+                    }
+                    else
+                    {
+                        // Sadece ay isimleri (2025 yılı olarak algıla)
+                        var monthPattern = @"(Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık)";
+                        var monthMatch = Regex.Match(prompt, monthPattern, RegexOptions.IgnoreCase);
+                        if (monthMatch.Success)
+                        {
+                            var month = monthMatch.Groups[1].Value;
+                            var year = 2025; // 2025 yılı olarak sabit
+                            travelDate = $"{year}-{GetMonthNumber(month)}-01";
+                        }
                     }
                 }
             }

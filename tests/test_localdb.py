@@ -20,8 +20,8 @@ def test_localdb_connection():
         
         # Veritabanı listesini kontrol et
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sys.databases WHERE name = 'HistoricalWeatherDB'")
-        result = cursor.fetchone()
+        cursor.execute("SELECT name FROM sys.databases WHERE name = 'HistoricalWeatherDB'") #Veritabanı listesini kontrol et
+        result = cursor.fetchone() #Veritabanı listesini al
         
         if result:
             print("✅ HistoricalWeatherDB veritabanı mevcut")
@@ -71,24 +71,24 @@ def test_historical_weather_db():
         cursor = conn.cursor()
         
         # historical_weather tablosu
-        cursor.execute("SELECT COUNT(*) FROM historical_weather")
-        weather_count = cursor.fetchone()[0]
-        print(f"📊 historical_weather tablosu: {weather_count} kayıt")
+        cursor.execute("SELECT COUNT(*) FROM historical_weather") #historical_weather tablosunun kayıt sayısını al
+        weather_count = cursor.fetchone()[0] #historical_weather tablosunun kayıt sayısını al
+        print(f"📊 historical_weather tablosu: {weather_count} kayıt") #historical_weather tablosunun kayıt sayısını göster
         
         # daily_probabilities tablosu
-        cursor.execute("SELECT COUNT(*) FROM daily_probabilities")
+        cursor.execute("SELECT COUNT(*) FROM daily_probabilities") #daily_probabilities tablosunun kayıt sayısını al
         prob_count = cursor.fetchone()[0]
         print(f"📊 daily_probabilities tablosu: {prob_count} kayıt")
         
         # Örnek veri göster
         if weather_count > 0:
             print("\n📋 Örnek Veriler:")
-            df = pd.read_sql_query("SELECT TOP 5 * FROM historical_weather", conn)
+            df = pd.read_sql_query("SELECT TOP 5 * FROM historical_weather", conn) #historical_weather tablosunun ilk 5 kaydını al
             print(df.to_string(index=False))
         
         if prob_count > 0:
             print("\n📋 Olasılık Verileri:")
-            df = pd.read_sql_query("SELECT TOP 5 * FROM daily_probabilities", conn)
+            df = pd.read_sql_query("SELECT TOP 5 * FROM daily_probabilities", conn) #daily_probabilities tablosunun ilk 5 kaydını al
             print(df.to_string(index=False))
         
         conn.close()

@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-🚀 SmartRouteAI - Kapsamlı Test Sistemi
-Bu sistem tüm projedeki bileşenleri test eder ve rapor verir.
-"""
-
 import requests
 import json
 import time
@@ -14,14 +9,14 @@ import subprocess
 import threading
 from typing import Dict, List, Tuple
 
-class SmartRouteAITestSystem:
+class SmartRouteAITestSystem: #Test sistemi sınıfı
     def __init__(self):
-        self.backend_url = "http://localhost:5077"
-        self.ml_service_url = "http://localhost:5001"
-        self.test_results = {}
-        self.start_time = datetime.now()
+        self.backend_url = "http://localhost:5077" #Backend URL
+        self.ml_service_url = "http://localhost:5001" #ML Servis URL
+        self.test_results = {} #Test sonuçları
+        self.start_time = datetime.now() #Test başlangıç zamanı
         
-    def print_header(self, title: str):
+    def print_header(self, title: str): #Test başlığı yazdır
         """Test başlığı yazdır"""
         print(f"\n{'='*60}")
         print(f"🧪 {title}")
@@ -47,11 +42,11 @@ class SmartRouteAITestSystem:
     def test_backend_health(self) -> bool:
         """Backend sağlık kontrolü"""
         try:
-            response = requests.get(f"{self.backend_url}/api/route/health", timeout=5)
-            if response.status_code == 200:
-                data = response.json()
+            response = requests.get(f"{self.backend_url}/api/route/health", timeout=5) #Backend'e istek gönder
+            if response.status_code == 200: #Backend'in döndüğü kod
+                data = response.json() #Backend'in döndüğü veriyi al
                 self.print_result("Backend Sağlık Kontrolü", True, 
-                                f"Status: {data.get('status', 'unknown')}")
+                                f"Status: {data.get('status', 'unknown')}") #Backend'in döndüğü veriyi göster
                 return True
             else:
                 self.print_result("Backend Sağlık Kontrolü", False, 
@@ -97,20 +92,20 @@ class SmartRouteAITestSystem:
         missing_models = []
         existing_models = []
         
-        for model in required_models:
+        for model in required_models: #Gerekli modelleri kontrol et
             if os.path.exists(model):
-                existing_models.append(model)
+                existing_models.append(model) #Mevcut modelleri ekle
             else:
-                missing_models.append(model)
+                missing_models.append(model) #Eksik modeli ekle
         
-        if len(missing_models) == 0:
+        if len(missing_models) == 0: #Eksik modeller yoksa
             self.print_result("Model Dosyaları Kontrolü", True, 
-                            f"{len(existing_models)} model dosyası mevcut")
+                            f"{len(existing_models)} model dosyası mevcut") #Mevcut modelleri göster
             return True
         else:
             self.print_result("Model Dosyaları Kontrolü", False, 
                             f"{len(missing_models)} model eksik", 
-                            f"Eksik: {', '.join(missing_models[:3])}")
+                            f"Eksik: {', '.join(missing_models[:3])}") #Eksik modelleri göster
             return False
     
     def test_prompt_analysis(self) -> bool:
@@ -120,10 +115,10 @@ class SmartRouteAITestSystem:
             payload = {"prompt": test_prompt}
             
             response = requests.post(f"{self.backend_url}/api/route/analyze-prompt", 
-                                   json=payload, timeout=10)
+                                   json=payload, timeout=10) #Backend'e prompt gönder
             
-            if response.status_code == 200:
-                data = response.json()
+            if response.status_code == 200: #Backend'in döndüğü kod
+                data = response.json() #Backend'in döndüğü veriyi al
                 source = data.get('source', '')
                 destination = data.get('destination', '')
                 weather = data.get('weatherConditions', [])
@@ -145,17 +140,17 @@ class SmartRouteAITestSystem:
         try:
             payload = {
                 "prompt": "İstanbul'dan Ankara'ya git, hava koşulları yağmurlu, seyahat tarihi 15 Temmuz 2025"
-            }
+            } #Prompt
             
             response = requests.post(f"{self.backend_url}/api/route/plan", 
-                                   json=payload, timeout=15)
+                                   json=payload, timeout=15) #Backend'e prompt gönder
             
             if response.status_code == 200:
                 data = response.json()
                 routes = data.get('routes', [])
                 
                 self.print_result("Rota Optimizasyonu Testi", True, 
-                                f"{len(routes)} rota bulundu")
+                                f"{len(routes)} rota bulundu") #Rota sayısını göster
                 return True
             else:
                 self.print_result("Rota Optimizasyonu Testi", False, 
@@ -163,7 +158,7 @@ class SmartRouteAITestSystem:
                 return False
         except Exception as e:
             self.print_result("Rota Optimizasyonu Testi", False, 
-                            f"Hata: {str(e)}")
+                            f"Hata: {str(e)}") #Hata mesajını göster
             return False
     
     def test_weather_prediction(self) -> bool:

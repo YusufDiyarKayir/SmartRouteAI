@@ -294,10 +294,10 @@ class AdvancedWeatherPredictor:
         """Optimal rota önerileri"""
         if not preferences:
             preferences = {
-                "priority": "time",  # time, cost, comfort
-                "avoid_tolls": False,
-                "avoid_mountainous": False,
-                "prefer_highways": True
+                "priority": "time",  # Öncelik: zaman
+                "avoid_tolls": False,  # Ücretli yolları tercih etme
+                "avoid_mountainous": False, # Dağlık yolları tercih etme
+                "prefer_highways": True # Otoyolları tercih etme
             }
         
         # Hava durumu tahmini
@@ -305,29 +305,29 @@ class AdvancedWeatherPredictor:
         
         # Rota önerileri
         recommendations = {
-            "weather_analysis": weather_analysis,
-            "route_recommendations": [],
-            "cost_analysis": {},
-            "traffic_analysis": {},
-            "weather_impact": {}
+            "weather_analysis": weather_analysis, # Hava durumu analizi
+            "route_recommendations": [], # Rota önerileri
+            "cost_analysis": {}, # Maliyet analizi
+            "traffic_analysis": {}, # Trafik analizi
+            "weather_impact": {} #  Hava durumu etkisi
         }
         
         # Hava koşullarına göre öneriler
         weather_conditions = weather_analysis["route_summary"]["weather_conditions"]
         if "kar" in weather_conditions or "karlı" in weather_conditions:
             recommendations["route_recommendations"].append({
-                "type": "weather",
-                "priority": "high",
-                "message": "Karlı hava bekleniyor - Dağlık yolları tercih etmeyin",
-                "impact": "duration_increase"
+                "type": "weather", # Hava durumu önerisi
+                "priority": "high", # Öncelik: yüksek
+                "message": "Karlı hava bekleniyor - Dağlık yolları tercih etmeyin", # Öneri mesajı
+                "impact": "duration_increase" # Etki: süre artışı
             })
         
         if "yağmur" in weather_conditions or "yağmurlu" in weather_conditions:
             recommendations["route_recommendations"].append({
                 "type": "weather",
                 "priority": "medium",
-                "message": "Yağmurlu hava bekleniyor - Ana yolları tercih edin",
-                "impact": "safety_improvement"
+                "message": "Yağmurlu hava bekleniyor - Ana yolları tercih edin", 
+                "impact": "safety_improvement" # Etki: güvenlik iyileştirmesi
             })
         
         # Tatil dönemi önerileri
@@ -335,8 +335,8 @@ class AdvancedWeatherPredictor:
             recommendations["route_recommendations"].append({
                 "type": "holiday",
                 "priority": "high",
-                "message": f"{weather_analysis['route_summary']['holiday_name']} dönemi - Erken yola çıkın",
-                "impact": "traffic_avoidance"
+                "message": f"{weather_analysis['route_summary']['holiday_name']} dönemi - Erken yola çıkın", 
+                "impact": "traffic_avoidance" # Etki: trafik önleme
             })
         
         return recommendations

@@ -2,11 +2,12 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>SmartRouteAI - Akıllı Rota Planlayıcı</title>
+    <title>SmartRouteAI - Yapay Zeka Destekli Rota Planlayıcı</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <style>
     * {
     margin: 0;
@@ -14,83 +15,317 @@
         box-sizing: border-box;
     }
 
+    :root {
+        --primary-gradient: linear-gradient(135deg, #0d0d0d 0%, #1a1a40 50%, #3a0ca3 100%);
+
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        --dark-bg: #0f172a;
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: rgba(255, 255, 255, 0.2);
+        --shadow-light: 0 4px 6px -1px rgba(26, 26, 64, 0.4); /* #1a1a40 */
+        --shadow-medium:  0 4px 6px -1px rgba(26, 26, 64, 0.4); /* #1a1a40 */
+        --shadow-heavy: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        --border-radius: 20px;
+        --border-radius-sm: 12px;
+    }
+
     body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        color: #1a202c;
+        background: var(--primary-gradient);
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--text-primary);
         min-height: 100vh;
         line-height: 1.6;
+        overflow-x: hidden;
+    }
+
+    /* Glassmorphism Effect */
+    .glass {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-heavy);
+    }
+
+    /* Floating Animation */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .floating {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Pulse Animation */
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .pulse {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .container {
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
         padding: 20px;
     }
 
     .header {
-    text-align: center;
-        margin-bottom: 30px;
+        text-align: center;
+        margin-bottom: 40px;
         color: white;
+        position: relative;
+    }
+
+    .header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 200px;
+        background: var(--secondary-gradient);
+        border-radius: 50%;
+        opacity: 0.1;
+        filter: blur(40px);
+        z-index: -1;
     }
 
     .header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -1px;
     }
 
-    .header p {
-        font-size: 1.1rem;
+    .header .subtitle {
+        font-size: 1.3rem;
         opacity: 0.9;
-        font-weight: 300;
+        font-weight: 400;
+        margin-bottom: 10px;
+    }
+
+    .header .features {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .feature-badge {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .feature-badge:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.3);
     }
 
     .main-content {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: 1fr 400px;
         gap: 2rem;
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto 30px auto;
-        align-items: flex-start;
+        align-items: start;
+    }
+
+    .map-section {
+        position: relative;
     }
 
     #map {
-        flex: 1;
-        min-height: 600px;
+        width: 100%;
+        height: 700px;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--shadow-heavy);
+        border: 1px solid var(--border-color);
     }
 
-        #route-options {
-        width: 320px;
-        height: 600px;
-        overflow-y: auto;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 0.5em;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    .map-overlay {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
         display: flex;
         flex-direction: column;
-        gap: 0;
-        flex-shrink: 0;
+        gap: 10px;
     }
 
-    @media (max-width: 900px) {
+    .map-control {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        padding: 12px;
+        box-shadow: var(--shadow-medium);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .map-control:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-heavy);
+    }
+
+    #route-options {
+        width: 100%;
+        height: 700px;
+        overflow-y: auto;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--shadow-heavy);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    @media (max-width: 1200px) {
         .main-content {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        #route-options {
+            height: 500px;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+        }
+        
+        .header .features {
+            gap: 20px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 15px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+        }
+
+        .header .features {
+            gap: 15px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .feature-badge {
+            width: 100%;
+            max-width: 300px;
+            justify-content: center;
+        }
+
+        #map {
+            height: 500px;
+        }
+
+        #route-options {
+            height: 400px;
+        }
+
+        .map-overlay {
+            top: 10px;
+            right: 10px;
+        }
+
+        .map-control {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+
+        .chat-header {
+            padding: 20px;
+        }
+
+        .chat-title h3 {
+            font-size: 1.1rem;
+        }
+
+        .route-card {
+            padding: 15px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header h1 {
+            font-size: 1.8rem;
+        }
+
+        .header .subtitle {
+            font-size: 1rem;
+        }
+
+        #map {
+            height: 400px;
+        }
+
+        .chat-input-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-suggestions {
             flex-direction: column;
             align-items: stretch;
         }
 
-        #map, #route-options {
-            max-width: 98vw;
-            margin: 1rem auto;
-        }
-        
-        #route-options {
-            min-width: auto;
-            max-height: 400px;
+        .suggestion-btn {
+            text-align: center;
         }
     }
 
@@ -119,29 +354,87 @@
         border-radius: 15px;
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 1;
     }
 
-        /* Chat Section Styles */
+    /* Rota çizgisi için özel stiller */
+    .leaflet-interactive {
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
+        vector-effect: non-scaling-stroke;
+    }
+
+    /* Harita performans optimizasyonu */
+    .leaflet-container {
+        background: #f8f9fa;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .leaflet-control-container {
+        z-index: 1000;
+    }
+
+    /* Chat Section Styles */
     .chat-section {
-        margin-bottom: 30px;
+        margin-bottom: 40px;
+        position: relative;
+    }
+
+    .chat-section::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: -20px;
+        right: -20px;
+        bottom: -20px;
+        background: var(--secondary-gradient);
+        border-radius: var(--border-radius);
+        opacity: 0.05;
+        z-index: -1;
     }
 
     .chat-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-heavy);
+        border: 1px solid var(--border-color);
         overflow: hidden;
+        position: relative;
+    }
+
+    .chat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
     }
 
     .chat-header {
-    display: flex;
+        display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 20px 25px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px 30px;
+        background: var(--primary-gradient);
         color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .chat-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        filter: blur(20px);
     }
 
     .chat-title {
@@ -388,6 +681,70 @@
         }
     }
 
+    /* Şehir İsmi Label'ları İçin CSS - Google Maps Hizalaması */
+    .city-name-label {
+        font-family: 'Roboto', 'Arial', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #202124;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        padding: 2px 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+        z-index: 1000;
+        position: relative;
+        letter-spacing: 0.3px;
+    }
+
+    .start-label {
+        background: rgba(76, 175, 80, 0.9);
+        border-color: #4caf50;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        font-weight: 600;
+    }
+
+    .end-label {
+        background: rgba(244, 67, 54, 0.9);
+        border-color: #f44336;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        font-weight: 600;
+    }
+
+    .waypoint-label {
+        background: rgba(255, 152, 0, 0.9);
+        border-color: #ff9800;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        font-weight: 600;
+    }
+
+    .other-label {
+        background: rgba(96, 125, 139, 0.9);
+        border-color: #607d8b;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Harita üzerindeki şehir marker'ları için */
+    .city-marker {
+        z-index: 999;
+    }
+
+    /* Leaflet label'ları için özel stillendirme */
+    .leaflet-div-icon {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    .city-label {
+        z-index: 1000 !important;
+    }
+
     /* Control Panel Styles */
     .control-panel h3 {
         display: flex;
@@ -508,49 +865,110 @@
 }
 
 #result {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 20px;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        padding: 25px;
         font-size: 1.1rem;
-        color: #1a202c;
-    text-align: center;
+        color: var(--text-primary);
+        text-align: center;
         margin: 20px 0;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-}
+        box-shadow: var(--shadow-heavy);
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+    }
+
+    #result::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--success-gradient);
+    }
 
 #route-options {
         margin: 20px 0;
-    display: flex;
-    flex-direction: column;
+        display: flex;
+        flex-direction: column;
         gap: 15px;
-}
+    }
+
+    .route-options-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .route-options-header h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .route-options-header .route-count {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
 
 .route-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        padding: 12px;
-    display: flex;
-    align-items: center;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius-sm);
+        box-shadow: var(--shadow-medium);
+        padding: 20px;
+        display: flex;
+        align-items: center;
         gap: 15px;
-    cursor: pointer;
+        cursor: pointer;
         transition: all 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        margin-bottom: 5px;
-}
+        border: 2px solid transparent;
+        margin-bottom: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .route-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--primary-gradient);
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
 
 .route-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-heavy);
+        border-color: var(--border-color);
+    }
+
+    .route-card:hover::before {
+        transform: scaleY(1);
     }
 
     .route-card.selected {
-        border: 2px solid #667eea;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-}
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .route-card.selected::before {
+        transform: scaleY(1);
+    }
 
 .route-title {
         font-weight: 600;
@@ -599,9 +1017,9 @@
 }
 
 .weather-impact {
-        color: #e53e3e;
-        font-weight: 600;
-    font-style: italic;
+        color: #e74c3c;
+        font-weight: bold;
+        font-style: italic;
 }
 
         /* Responsive Design */
@@ -704,14 +1122,140 @@
         background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
 
+        /* Şehir isimleri için özel stiller */
+        .city-label {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            position: absolute;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .city-label.start {
+            border-color: #2ecc71;
+            color: #27ae60;
+            background: rgba(46, 204, 113, 0.25);
+            font-size: 20px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(46, 204, 113, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: pulse-green 2s infinite;
+            font-weight: 900;
+            border-width: 4px;
+        }
+
+        .city-label.end {
+            border-color: #e74c3c;
+            color: #c0392b;
+            background: rgba(231, 76, 60, 0.25);
+            font-size: 20px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: pulse-red 2s infinite;
+            font-weight: 900;
+            border-width: 4px;
+        }
+
+        .city-label.waypoint {
+            border-color: #f39c12;
+            color: #e67e22;
+            background: rgba(243, 156, 18, 0.25);
+            font-size: 20px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(243, 156, 18, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: pulse-orange 2s infinite;
+            font-weight: 900;
+            border-width: 4px;
+        }
+
+        .city-label.other {
+            border-color: #3498db;
+            color: #2980b9;
+            background: rgba(52, 152, 219, 0.25);
+            font-size: 20px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: pulse-blue 2s infinite;
+            font-weight: 900;
+            border-width: 4px;
+        }
+
+        /* Parıldama animasyonları */
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 10px 30px rgba(46, 204, 113, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(46, 204, 113, 0.8), 0 6px 15px rgba(0, 0, 0, 0.4); }
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 10px 30px rgba(231, 76, 60, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(231, 76, 60, 0.8), 0 6px 15px rgba(0, 0, 0, 0.4); }
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { box-shadow: 0 10px 30px rgba(243, 156, 18, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(243, 156, 18, 0.8), 0 6px 15px rgba(0, 0, 0, 0.4); }
+        }
+
+        @keyframes pulse-blue {
+            0%, 100% { box-shadow: 0 10px 30px rgba(52, 152, 219, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(52, 152, 219, 0.8), 0 6px 15px rgba(0, 0, 0, 0.4); }
+        }
+
+        /* Şehir marker'ları için özel stiller */
+        .city-marker {
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .city-marker.start {
+            filter: drop-shadow(0 4px 8px rgba(46, 204, 113, 0.4));
+        }
+
+        .city-marker.end {
+            filter: drop-shadow(0 4px 8px rgba(231, 76, 60, 0.4));
+        }
+
+        .city-marker.waypoint {
+            filter: drop-shadow(0 4px 8px rgba(243, 156, 18, 0.4));
+        }
+
+        .city-marker.other {
+            filter: drop-shadow(0 4px 8px rgba(52, 152, 219, 0.4));
+        }
         </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-route"></i> SmartRouteAI</h1>
-            <p>Yapay Zeka Destekli Akıllı Rota Planlayıcı</p>
-    </div>
+            <p class="subtitle">Yapay Zeka Destekli Akıllı Rota Planlayıcı</p>
+            <div class="features">
+                <div class="feature-badge">
+                    <i class="fas fa-brain"></i>
+                    AI Destekli
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-cloud-sun"></i>
+                    Hava Durumu
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-traffic-light"></i>
+                    Trafik Analizi
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-calendar-alt"></i>
+                    Tatil Bilgisi
+                </div>
+            </div>
+        </div>
 
                 <!-- AI Chat Section -->
         <div class="chat-section">
@@ -766,8 +1310,18 @@
         </div>
 
         <div class="main-content">
-            <div class="map-container">
+            <div class="map-section">
                 <div id="map"></div>
+                <div class="map-overlay">
+                    <div class="map-control" onclick="resetMap()">
+                        <i class="fas fa-undo"></i>
+                        Sıfırla
+                    </div>
+                    <div class="map-control" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i>
+                        Tam Ekran
+                    </div>
+                </div>
             </div>
             <div id="route-options"></div>
         </div>
@@ -852,7 +1406,7 @@
             }
         }
 
-        // Polyline decode (Google polyline formatı) - Sadeleştirilmiş versiyon
+        // Polyline decode (Google polyline formatı) - Optimize edilmiş versiyon
         function decodePolyline(encoded) {
             if (!encoded || encoded.length === 0) {
                 console.warn('Empty polyline data');
@@ -885,7 +1439,31 @@
                     points.push([lat / 1e5, lng / 1e5]);
                 }
                 
-                console.log(`Decoded ${points.length} points from polyline`);
+                // Nokta sayısını optimize et - çok az nokta varsa interpolasyon yap
+                if (points.length < 10 && points.length > 2) {
+                    const optimizedPoints = [];
+                    for (let i = 0; i < points.length - 1; i++) {
+                        const start = points[i];
+                        const end = points[i + 1];
+                        optimizedPoints.push(start);
+                        
+                        // İki nokta arasına ara noktalar ekle
+                        const distance = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
+                        if (distance > 0.01) { // Sadece uzak noktalar arasına ara nokta ekle
+                            const steps = Math.min(5, Math.floor(distance * 1000));
+                            for (let j = 1; j < steps; j++) {
+                                const ratio = j / steps;
+                                const lat = start[0] + (end[0] - start[0]) * ratio;
+                                const lng = start[1] + (end[1] - start[1]) * ratio;
+                                optimizedPoints.push([lat, lng]);
+                            }
+                        }
+                    }
+                    optimizedPoints.push(points[points.length - 1]);
+                    points = optimizedPoints;
+                }
+                
+                console.log(`Decoded ${points.length} points from polyline (optimized)`);
                 return points;
             } catch (error) {
                 console.error('Error decoding polyline:', error);
@@ -893,12 +1471,16 @@
             }
         }
         const map = L.map('map').setView([41.0082, 28.9784], 10); // İstanbul merkezli
-        // Google Maps tile layer kullanarak daha doğru rota çizimi
-        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        // Google Maps tile layer Türkçe şehir isimleri ile - Optimize edilmiş ayarlar
+        L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}&hl=tr', {
             maxZoom: 20,
             attribution: '© Google Maps',
             updateWhenZooming: false,
-            updateWhenIdle: true
+            updateWhenIdle: true,
+            keepBuffer: 2,
+            maxNativeZoom: 18,
+            tileSize: 256,
+            zoomOffset: 0
         }).addTo(map);
 
         let fromMarker = null;
@@ -917,16 +1499,28 @@
 
         function showRouteOptions(routes) {
             const container = document.getElementById('route-options');
-            container.innerHTML = '<h3 style="margin:0 0 1rem 0;color:#2a3d66;font-size:1.2rem;">🛣️ Alternatif Rotalar</h3>';
+            
             if (!routes || routes.length === 0) {
-                container.innerHTML += '<p style="color:#666;text-align:center;margin:1rem 0;">Henüz rota oluşturulmadı</p>';
+                container.innerHTML = `
+                    <div class="route-options-header">
+                        <h3><i class="fas fa-route"></i> Alternatif Rotalar</h3>
+                        <span class="route-count">0</span>
+                    </div>
+                    <div style="text-align:center;padding:40px;color:var(--text-secondary);">
+                        <i class="fas fa-map-marked-alt" style="font-size:3rem;margin-bottom:20px;opacity:0.5;"></i>
+                        <p>Henüz rota oluşturulmadı</p>
+                        <small>AI asistanı ile konuşarak rota oluşturabilirsiniz</small>
+                    </div>
+                `;
                 return;
             }
             
-            const header = document.createElement('div');
-            header.style.cssText = 'margin: 0; font-size: 1.2rem; font-weight: 600; color: white; text-align: center;';
-            header.innerHTML = '<i class="fas fa-route"></i> Alternatif Rotalar';
-            container.appendChild(header);
+            container.innerHTML = `
+                <div class="route-options-header">
+                    <h3><i class="fas fa-route"></i> Alternatif Rotalar</h3>
+                    <span class="route-count">${routes.length}</span>
+                </div>
+            `;
             
             routes.forEach((route, idx) => {
                 console.log(`[FRONTEND] Route ${idx}:`, route);
@@ -953,27 +1547,76 @@
                     </span>`;
                 }
                 
-                // Süre karşılaştırması
-                const originalDuration = formatDuration(route.durationMin || route.estimatedDurationMinutes);
-                const adjustedDuration = formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes);
-                const durationDisplay = route.adjustedDurationMin > (route.durationMin || route.estimatedDurationMinutes) 
-                    ? `${adjustedDuration} <span style="color:#dc3545;font-size:0.9em;">(${originalDuration})</span>`
-                    : adjustedDuration;
+                // Süre bilgileri hazırlanıyor
                 
                 div.innerHTML = `
                     <div style="flex: 1;">
-                        <div class="route-title">
-                            ${route.title || `Rota ${idx + 1}`}
+                        <div class="route-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <span style="background: var(--primary-gradient); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;">${idx + 1}</span>
+                            <span>${route.title || `Rota ${idx + 1}`}</span>
                             ${holidayBadge}
                             ${aiBadge}
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #f8fafc; border-radius: 3px;">
+                                <i class="fas fa-road" style="color: #667eea; font-size: 0.6em;"></i>
+                                <span class="route-title" style="font-size: 0.7em;"><strong>${route.distanceKm || 0} KM</strong></span>
+                            </div>
                         </div>
-                        <div style="display: flex; gap: 15px; margin-top: 8px;">
-                            <span class="route-info"><i class="fas fa-road"></i> ${route.distanceKm || 0} km</span>
-                            <span class="route-info"><i class="fas fa-clock"></i> ${durationDisplay}</span>
+                        <div style="display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px;">    
+                            
+                            <!-- Normal varış süresi -->
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #e8f5e8; border-radius: 3px; border-left: 2px solid #28a745;">
+                                <i class="fas fa-clock" style="color: #28a745; font-size: 0.6em;"></i>
+                                <span class="route-info" style="font-size: 0.6em;"><strong>Normal:</strong> <strong>${formatDuration(route.durationMin || route.estimatedDurationMinutes)}</strong></span>
+                            </div>
+                            
+                            <!-- Hava şartları nedeniyle varış süresi (eğer varsa) -->
+                            ${route.durationType === "weather" || route.durationType === "combined" ? `
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #fff3cd; border-radius: 3px; border-left: 2px solid #ffc107;">
+                                <i class="fas fa-cloud-rain" style="color: #ffc107; font-size: 0.6em;"></i>
+                                <span class="route-info" style="font-size: 0.6em;"><strong>Hava:</strong> ${formatDuration(route.weatherDurationMin || route.adjustedDurationMin)}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Tatil günü nedeniyle varış süresi (eğer varsa) -->
+                            ${route.durationType === "holiday" || route.durationType === "combined" ? `
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #f8d7da; border-radius: 3px; border-left: 2px solid #dc3545;">
+                                <i class="fas fa-calendar-alt" style="color: #dc3545; font-size: 0.6em;"></i>
+                                <span class="route-info" style="font-size: 0.6em;"><strong>Tatil:</strong> ${formatDuration(route.holidayDurationMin || route.adjustedDurationMin)}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Hava şartları ve tatil nedeniyle varış süresi (eğer varsa) -->
+                            ${route.durationType === "combined" ? `
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #d1ecf1; border-radius: 3px; border-left: 2px solid #17a2b8;">
+                                <i class="fas fa-exclamation-triangle" style="color: #17a2b8; font-size: 0.6em;"></i>
+                                <span class="route-info" style="font-size: 0.6em;"><strong>Hava+Tatil:</strong> ${formatDuration(route.combinedDurationMin || route.adjustedDurationMin)}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- TAHMİNİ VARİŞ - Kırmızı ve büyük -->
+                            <div style="display: flex; align-items: center; gap: 4px; padding: 3px 6px; background: #dc3545; border-radius: 3px; margin-top: 3px;">
+                                <i class="fas fa-flag-checkered" style="color: white; font-size: 0.5em;"></i>
+                                <span class="route-info" style="color: white; font-size: 0.8em; font-weight: bold;">TAHMİNİ: ${formatDuration(route.adjustedDurationMin || route.estimatedDurationMinutes)}</span>
+                            </div>
                         </div>
-                        ${route.weatherImpact ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;"><i class="fas fa-exclamation-triangle"></i> ${route.weatherImpact}</div>` : ''}
+                        ${route.weatherImpact ? `
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff3cd; border-radius: 8px; border-left: 3px solid #ffc107; margin-bottom: 8px;">
+                                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                                <span style="font-size: 0.6em; color: #856404;">${route.weatherImpact}</span>
+                            </div>
+                        ` : ''}
+                        <div style="margin-top: 8px; text-align: right;">
+                            <button onclick="event.stopPropagation(); openGoogleMaps(${idx})" style="background:#4285f4;color:white;border:none;padding:0.5em 1em;border-radius:5px;cursor:pointer;font-size:0.9em;display:inline-flex;align-items:center;gap:0.3em;transition:all 0.3s ease;box-shadow:0 2px 4px rgba(66,133,244,0.3);" onmouseover="this.style.background='#3367d6';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 8px rgba(66,133,244,0.4)'" onmouseout="this.style.background='#4285f4';this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(66,133,244,0.3)'">
+                                <i class="fas fa-map-marked-alt"></i> Google Maps'te Aç
+                            </button>
+                        </div>
                     </div>
-                    <span class="route-toll">${route.tollClass || 'Standart'}</span>`;
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <span class="route-toll" style="writing-mode: vertical-rl; text-orientation: mixed; padding: 8px 4px;">${route.tollClass || 'Ücretsiz'}</span>
+                        <div style="width: 2px; height: 20px; background: var(--primary-gradient); border-radius: 1px;"></div>
+                    </div>`;
+                    
+
                 container.appendChild(div);
             });
         }
@@ -1024,7 +1667,7 @@
                     <div><i class="fas fa-calendar-check"></i> <b>Tahmini varış:</b> ${route.arrivalStr || route.arrivalstr || '-'}</div>
                     <div><i class="fas fa-cloud-sun"></i> <b>Beklenen hava:</b> <span class="weather-main">${route.weatherDesc || route.weatherdesc ? (route.weatherDesc || route.weatherdesc).charAt(0).toUpperCase() + (route.weatherDesc || route.weatherdesc).slice(1) : (route.weather || '-')}</span></div>
                     <div><i class="fas fa-exclamation-triangle"></i> <b>${route.aiOptimized ? 'AI, Hava ve Tatil' : 'Hava ve Tatil'} Etkisi:</b> <span class="weather-impact">${route.weatherImpact || 'Yok'}</span></div>
-                    <div><i class="fas fa-highway"></i> <b>Otoyol:</b> <span class="route-toll">${route.tollClass || 'Standart'}</span></div>
+                    <div><i class="fas fa-highway"></i> <b>Otoyol:</b> <span class="route-toll">${route.tollClass || 'Ücretsiz'}</span></div>
                     <div><i class="fas fa-credit-card"></i> <b>Ücretli geçiş:</b> <span class="route-toll">${route.tollInfo || route.tollinfo || '-'}</span></div>
                 </div>
             `;
@@ -1051,11 +1694,12 @@
                 if (latlngs.length > 1) {
                     routeLine = L.polyline(latlngs, {
                         color: '#6b5ac6', 
-                        weight: 8, 
-                        opacity: 0.8,
-                        smoothFactor: 1,
+                        weight: 10, 
+                        opacity: 0.9,
+                        smoothFactor: 0.3,
                         lineCap: 'round',
-                        lineJoin: 'round'
+                        lineJoin: 'round',
+                        dashArray: null
                     }).addTo(map);
                     routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
@@ -1136,6 +1780,11 @@
             if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; }
             if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
             currentRoute = null;
+            
+            // Şehir etiketlerini temizle
+            clearCityLabels();
+            promptCities = [];
+            
             updateCoords();
             document.getElementById('result').textContent = '';
             document.getElementById('route-details').innerHTML = ''; // Sıfırlama
@@ -1147,29 +1796,32 @@
             if (zoom < 12) {
                 routeLine.setStyle({ 
                     color: '#6b5ac6', 
-                    weight: 10, 
-                    opacity: 0.8,
-                    smoothFactor: 1,
+                    weight: 12, 
+                    opacity: 0.9,
+                    smoothFactor: 0.5,
                     lineCap: 'round',
-                    lineJoin: 'round'
+                    lineJoin: 'round',
+                    dashArray: null
                 });
             } else if (zoom < 15) {
                 routeLine.setStyle({ 
                     color: '#6b5ac6', 
-                    weight: 8, 
-                    opacity: 0.8,
-                    smoothFactor: 1,
+                    weight: 10, 
+                    opacity: 0.9,
+                    smoothFactor: 0.3,
                     lineCap: 'round',
-                    lineJoin: 'round'
+                    lineJoin: 'round',
+                    dashArray: null
                 });
             } else {
                 routeLine.setStyle({ 
                     color: '#6b5ac6', 
-                    weight: 6, 
-                    opacity: 0.8,
-                    smoothFactor: 1,
+                    weight: 8, 
+                    opacity: 0.9,
+                    smoothFactor: 0.1,
                     lineCap: 'round',
-                    lineJoin: 'round'
+                    lineJoin: 'round',
+                    dashArray: null
                 });
             }
         }
@@ -1219,11 +1871,12 @@
                         const latlngs = decodePolyline(result.polyline);
                         routeLine = L.polyline(latlngs, {
                             color: '#6b5ac6', 
-                            weight: 8, 
-                            opacity: 0.8,
-                            smoothFactor: 1,
+                            weight: 10, 
+                            opacity: 0.9,
+                            smoothFactor: 0.3,
                             lineCap: 'round',
-                            lineJoin: 'round'
+                            lineJoin: 'round',
+                            dashArray: null
                         }).addTo(map);
                         routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                         map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
@@ -1292,6 +1945,17 @@
             const prompt = promptInput.value.trim();
             if (!prompt) return;
 
+            // Prompt'tan şehirleri çıkar
+            promptCities = extractCitiesFromPrompt(prompt);
+            console.log('Prompt\'tan çıkarılan şehirler:', promptCities);
+            
+            // Global prompt şehirlerini kaydet
+            window._promptCities = promptCities;
+            console.log('Saved prompt cities globally:', window._promptCities);
+            
+            // Önceki şehir etiketlerini temizle
+            clearCityLabels();
+
             // Kullanıcı mesajını ekle
             addMessage(prompt, 'user');
             promptInput.value = '';
@@ -1326,15 +1990,18 @@
                 // Yükleniyor mesajını kaldır
                 removeMessage(loadingId);
 
+                // Prompt şehirlerini haritada göster
+                showPromptCitiesOnMap();
+
                 // Detaylı bot yanıtını oluştur
                 let responseText = `
                     <strong>🎯 Rota Analizi ve Hesaplama Tamamlandı!</strong><br><br>
                     <strong>📍 Kaynak:</strong> ${analysis.source || 'Belirlenemedi'}<br>
                     <strong>🎯 Hedef:</strong> ${analysis.destination || 'Belirlenemedi'}<br>
-                    <strong>⚡ İstekler:</strong> ${analysis.requests.join(', ') || 'Yok'}<br>
-                    <strong>🌉 Köprü Direktifleri:</strong> ${analysis.bridgeDirectives.map(d => d.name).join(', ') || 'Yok'}<br>
-                    <strong>🛣️ Otoyol Direktifleri:</strong> ${analysis.highwayDirectives.map(d => d.name).join(', ') || 'Yok'}<br>
-                    <strong>🌤️ Hava Koşulları:</strong> ${analysis.weatherConditions.join(', ') || 'Yok'}<br><br>
+                    <strong>⚡ İstekler:</strong> ${(analysis.requests || []).join(', ') || 'Yok'}<br>
+                    <strong>🌉 Köprü Direktifleri:</strong> ${(analysis.bridgeDirectives || []).map(d => d.name).join(', ') || 'Yok'}<br>
+                    <strong>🛣️ Otoyol Direktifleri:</strong> ${(analysis.highwayDirectives || []).map(d => d.name).join(', ') || 'Yok'}<br>
+                    <strong>🌤️ Hava Koşulları:</strong> ${(analysis.weatherConditions || []).join(', ') || 'Yok'}<br><br>
                 `;
 
                 // Tatil bilgilerini ekle
@@ -1378,12 +2045,12 @@
                     // allRoutes'u da güncelle
                     allRoutes = window.chatRoutes;
                     
-                    responseText += `<br><strong>🛣️ Alternatif Rotalar (${routeData.alternatives.length} adet):</strong><br>`;
+                    responseText += `<br><strong style="color:black;">🛣️ Alternatif Rotalar (${routeData.alternatives.length} adet):</strong><br>`;
                     
                     routeData.alternatives.forEach((alt, idx) => {
                         const durationDisplay = formatDuration(alt.adjustedDurationMin || alt.durationMin);
                         const tollInfo = alt.hasToll ? '<span style="color:#e74c3c;font-weight:bold;">💰 Ücretli yol</span>' : '<span style="color:#27ae60;">✅ Ücretsiz</span>';
-                        const weatherImpact = alt.weatherImpact ? `<br><span style="color:#e74c3c;font-style:italic;">🌤️ ${alt.weatherImpact}</span>` : '';
+                        const weatherImpact = alt.weatherImpact ? `<br><span style="color:#e74c3c;font-style:italic;font-size:0.6em;">🌤️ ${alt.weatherImpact}</span>` : '';
                         
                         responseText += `
                             <div style="margin: 8px 0; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea; cursor: pointer;" onclick="selectRouteFromChat(${idx})">
@@ -1422,7 +2089,9 @@
 
             } catch (error) {
                 console.error('Rota hesaplama hatası:', error);
-                removeMessage(loadingId);
+                if (typeof loadingId !== 'undefined') {
+                    removeMessage(loadingId);
+                }
                 addMessage('❌ Rota hesaplama sırasında hata oluştu. Lütfen tekrar deneyin.', 'bot');
             } finally {
                 // Gönder butonunu tekrar aktif et
@@ -1529,13 +2198,13 @@
                     sortedAlternatives = [...data.alternatives].sort((a, b) => (a.hasToll ? 1 : 0) - (b.hasToll ? 1 : 0));
                 }
                 // Alternatif rotaları kartlar halinde göster
-                let altHtml = '<b>Alternatif Rotalar:</b><br><div id="alt-routes-list" style="display:flex;flex-direction:column;gap:1em;margin-top:1em;">';
+                let altHtml = '<b style="color:black;">Alternatif Rotalar:</b><br><div id="alt-routes-list" style="display:flex;flex-direction:column;gap:1em;margin-top:1em;">';
                 sortedAlternatives.forEach((alt, idx) => {
                     altHtml += `<div class="route-card" id="route-card-${idx}" style="padding:1em;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);background:#fff;cursor:pointer;${idx===0?'border:2px solid #2a3d66;':''}" onclick="window.selectAltRoute(${idx})">
                         <b>${alt.summary || 'Alternatif Rota ' + (idx+1)}</b><br>
                         Mesafe: ${alt.distanceKm} km, Süre: ${formatDuration(alt.adjustedDurationMin || alt.durationMin)}<br>
                         ${alt.hasToll ? '<span style=\"color:#e74c3c;font-weight:bold;\">Ücretli yol içerir</span>' : '<span style=\"color:#27ae60;\">Ücretli yol içermez</span>'}
-                        ${alt.weatherImpact ? `<br><span style=\"color:#e74c3c;font-weight:bold;font-style:italic;\">${alt.weatherImpact}</span>` : ''}
+                        ${alt.weatherImpact ? `<br><span style=\"color:#e74c3c;font-weight:bold;font-style:italic;font-size:0.6em;\">${alt.weatherImpact}</span>` : ''}
 
                     </div>`;
                 });
@@ -1680,6 +2349,7 @@
                             const marker = L.marker(cityCoords, { icon: i === 0 ? startIcon : (i === alt.route.length-1 ? endIcon : waypointIcon) }).addTo(map).bindPopup(foundCity);
                             bounds.push(cityCoords);
                             window._cityMarkers.push(marker);
+                // Şehir label'ı eklenmiyor - sadece marker kalsın
                         }
                     }
                     if (bounds.length > 0) map.fitBounds(bounds, {padding: [50, 50]});
@@ -1689,9 +2359,12 @@
                         if (latlngs.length > 1) {
                             routeLine = L.polyline(latlngs, {
                                 color: '#6b5ac6', 
-                                weight: 6, 
-                                opacity: 0.8,
-                                smoothFactor: 1
+                                weight: 10, 
+                                opacity: 0.9,
+                                smoothFactor: 0.3,
+                                lineCap: 'round',
+                                lineJoin: 'round',
+                                dashArray: null
                             }).addTo(map);
                             routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                             map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
@@ -1699,26 +2372,28 @@
                         } else {
                             console.warn('Polyline decoded but insufficient points');
                             if (bounds.length > 1) {
-                                routeLine = L.polyline(bounds, {
-                                    color: '#6b5ac6', 
-                                    weight: 8, 
-                                    opacity: 0.8,
-                                    smoothFactor: 1,
-                                    lineCap: 'round',
-                                    lineJoin: 'round'
-                                }).addTo(map);
-                                routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
+                                                        routeLine = L.polyline(bounds, {
+                            color: '#6b5ac6', 
+                            weight: 10, 
+                            opacity: 0.9,
+                            smoothFactor: 0.3,
+                            lineCap: 'round',
+                            lineJoin: 'round',
+                            dashArray: null
+                        }).addTo(map);
+                        routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                             }
                         }
                     } else if (bounds.length > 1) {
                         console.log('Using bounds for route line');
                         routeLine = L.polyline(bounds, {
                             color: '#6b5ac6', 
-                            weight: 8, 
-                            opacity: 0.8,
-                            smoothFactor: 1,
+                            weight: 10, 
+                            opacity: 0.9,
+                            smoothFactor: 0.3,
                             lineCap: 'round',
-                            lineJoin: 'round'
+                            lineJoin: 'round',
+                            dashArray: null
                         }).addTo(map);
                         routeLine.setZIndex(50); // Şehir isimlerinin arkasına geçmesi için çok düşük z-index
                     } else {
@@ -1739,11 +2414,184 @@
         function normalize(str) { return str.replace(/[İıŞşĞğÜüÖöÇç]/g, c => turkishMap[c] || c).toLowerCase(); }
         const cityCentersMap = {};
         for (const key in cityCenters) { cityCentersMap[normalize(key)] = key; }
-        const startIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]});
-        const endIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png', iconSize: [32,32], iconAnchor: [16,32]});
-        const waypointIcon = L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', iconSize: [28,28], iconAnchor: [14,28]});
+
+        // Prompt ile tespit edilen şehirler için marker ve label ekle
+        function showPromptCitiesOnMap() {
+            clearCityLabels();
+            if (!window.promptCities || !Array.isArray(window.promptCities)) return;
+            window.promptCities.forEach((city, idx) => {
+                const cityNameNorm = normalize(city);
+                const cityKey = cityCentersMap[cityNameNorm];
+                if (!cityKey) return;
+                const coords = cityCenters[cityKey];
+                if (!coords) return;
+                // Marker ekle
+                const marker = L.marker([coords.lat, coords.lng], { icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map);
+                addCityLabel(marker, cityKey, idx === 0 ? 'start' : (idx === window.promptCities.length-1 ? 'end' : 'waypoint'));
+            });
+            updateAllCityLabels();
+        }
+        // Özel şehir marker ikonları
+        const startIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', 
+            iconSize: [40, 40], 
+            iconAnchor: [20, 40],
+            className: 'city-marker start'
+        });
+        const endIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149059.png', 
+            iconSize: [40, 40], 
+            iconAnchor: [20, 40],
+            className: 'city-marker end'
+        });
+        const waypointIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', 
+            iconSize: [36, 36], 
+            iconAnchor: [18, 36],
+            className: 'city-marker waypoint'
+        });
+        const otherIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', 
+            iconSize: [32, 32], 
+            iconAnchor: [16, 32],
+            className: 'city-marker other'
+        });
+
+        // Prompt'tan çıkarılan şehirleri takip etmek için global değişken
+        let promptCities = [];
+        let cityLabels = [];
+
+        // Şehir etiketlerini temizle
+        function clearCityLabels() {
+            // Şehir etiketlerini temizle
+            cityLabels.forEach(label => {
+                if (label && map.hasLayer(label)) {
+                    map.removeLayer(label);
+                }
+            });
+            cityLabels = [];
+            
+            // Eski şehir marker'larını da temizle
+            if (window._cityMarkers && Array.isArray(window._cityMarkers)) {
+                window._cityMarkers.forEach(marker => {
+                    if (marker && map.hasLayer(marker)) {
+                        map.removeLayer(marker);
+                    }
+                });
+                window._cityMarkers = [];
+            }
+            
+            // Eski rota çizgilerini temizle
+            if (routeLine && map.hasLayer(routeLine)) {
+                map.removeLayer(routeLine);
+                routeLine = null;
+            }
+        }
+
+        // Şehir etiketlerini ekle
+        function addCityLabel(cityName, coords, type) {
+            // Marker ikonunu ve label'ı birlikte ekle
+            // Şehir markerı (pin)
+            let markerIcon;
+            if (type === 'start') markerIcon = startIcon;
+            else if (type === 'end') markerIcon = endIcon;
+            else if (type === 'waypoint') markerIcon = waypointIcon;
+            else markerIcon = otherIcon;
+
+            // Marker'ı ekle
+            const marker = L.marker(coords, { icon: markerIcon }).addTo(map);
+            
+            // Label için divIcon ekle (marker'ın tam altında ve Google Maps şehir isimleriyle hizalı)
+            const labelIcon = L.divIcon({
+                className: `city-label ${type}`,
+                html: `<div class="city-name-label ${type}-label">${cityName}</div>`,
+                iconSize: [150, 30],
+                iconAnchor: [75, -10] // marker'ın altında, ortalanmış ve Google Maps ile hizalı
+            });
+            const labelMarker = L.marker(coords, { icon: labelIcon, interactive: false }).addTo(map);
+            cityLabels.push(marker);
+            cityLabels.push(labelMarker);
+            return marker;
+        }
+
+        // Prompt şehirlerini haritada göster
+        function showPromptCitiesOnMap() {
+            if (!promptCities || promptCities.length === 0) return;
+            
+            // _cityMarkers dizisini başlat
+            if (!window._cityMarkers) {
+                window._cityMarkers = [];
+            }
+            
+            promptCities.forEach((cityName, index) => {
+                const cityData = cityCenters[cityName];
+                if (cityData) {
+                    const [lat, lng] = cityData;
+                    let type = 'other';
+                    let icon = otherIcon;
+                    
+                    // İlk şehir başlangıç, son şehir hedef, diğerleri ara durak
+                    if (index === 0) {
+                        type = 'start';
+                        icon = startIcon;
+                    } else if (index === promptCities.length - 1) {
+                        type = 'end';
+                        icon = endIcon;
+                    } else {
+                        type = 'waypoint';
+                        icon = waypointIcon;
+                    }
+                    
+                    // Şehir marker'ını ekle
+                    const marker = L.marker([lat, lng], { icon: icon }).addTo(map);
+                    marker.bindPopup(`<b>${cityName}</b><br>${type === 'start' ? '🚀 Başlangıç' : type === 'end' ? '🎯 Hedef' : '📍 Ara Durak'}`);
+                    window._cityMarkers.push(marker);
+                    
+                    // Şehir etiketini ekle (kapatıldı - sadece marker kalsın)
+                    // addCityLabelV2(cityName, [lat, lng], type);
+                }
+            });
+        }
+
+        // Şehir etiketlerini ekle (Google Maps hizalaması için optimize edilmiş)
+        function addCityLabelV2(cityName, coords, type) {
+            // Türkçe karakterleri düzgün göstermek için UTF-8 encoding
+            const encodedCityName = cityName.replace(/ı/g, 'ı').replace(/İ/g, 'İ').replace(/ş/g, 'ş').replace(/Ş/g, 'Ş').replace(/ğ/g, 'ğ').replace(/Ğ/g, 'Ğ').replace(/ü/g, 'ü').replace(/Ü/g, 'Ü').replace(/ö/g, 'ö').replace(/Ö/g, 'Ö').replace(/ç/g, 'ç').replace(/Ç/g, 'Ç');
+            
+            const label = L.divIcon({
+                className: `city-label ${type}`,
+                html: `<div class="city-name-label ${type}-label">${encodedCityName}</div>`,
+                iconSize: [200, 25],
+                iconAnchor: [100, -15] // Google Maps şehir isimleriyle tam hizalı: merkez ve koordinatın altında
+            });
+            
+            const marker = L.marker(coords, { icon: label }).addTo(map);
+            cityLabels.push(marker);
+            return marker;
+        }
 
 
+
+        // Prompt'tan şehirleri çıkar
+        function extractCitiesFromPrompt(prompt) {
+            const cities = [];
+            const promptLower = prompt.toLowerCase();
+            
+            // Şehirleri prompt'taki sıraya göre bul
+            for (const cityName in cityCenters) {
+                const cityNameLower = cityName.toLowerCase();
+                const position = promptLower.indexOf(cityNameLower);
+                if (position >= 0) {
+                    cities.push({ name: cityName, position: position });
+                }
+            }
+            
+            // Şehirleri prompt'taki pozisyonlarına göre sırala
+            cities.sort((a, b) => a.position - b.position);
+            
+            // Sadece şehir isimlerini döndür
+            return cities.map(city => city.name);
+        }
 
         // Enter tuşu ile prompt rota oluştur
         const promptInput = document.getElementById('prompt-input');
@@ -1755,6 +2603,208 @@
             }
         });
         }
+
+        // Yeni harita kontrol fonksiyonları
+        function resetMap() {
+            if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; }
+            if (toMarker) { map.removeLayer(toMarker); toMarker = null; toCoord = null; }
+            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+            clearCityLabels();
+            updateCoords();
+            document.getElementById('result').textContent = '';
+            document.getElementById('route-details').innerHTML = '';
+            showRouteOptions([]);
+            
+            // Haritayı İstanbul'a geri döndür
+            map.setView([41.0082, 28.9784], 10);
+        }
+
+        function toggleFullscreen() {
+            const mapContainer = document.getElementById('map');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Google Maps'te rota açma fonksiyonu
+        function openGoogleMaps(idx) {
+            const route = allRoutes[idx];
+            console.log('Opening Google Maps for route:', route);
+            
+            if (!route) {
+                console.error('Route not found');
+                return;
+            }
+            
+            // 1. Google Maps sıralı rota (en güvenilir yöntem - öncelik)
+            if (window._promptCities && window._promptCities.length >= 2) {
+                console.log('Using prompt cities for Google Maps:', window._promptCities);
+                
+                // Tüm şehirleri sırayla ziyaret etmek için
+                if (window._promptCities.length === 2) {
+                    // Sadece 2 şehir varsa
+                    const googleMapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(window._promptCities[0])}/${encodeURIComponent(window._promptCities[1])}`;
+                    console.log('Opening Google Maps with 2 cities:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                    return;
+                } else if (window._promptCities.length === 3) {
+                    // 3 şehir varsa: A -> B -> C (sırayla)
+                    const googleMapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(window._promptCities[0])}/${encodeURIComponent(window._promptCities[1])}/${encodeURIComponent(window._promptCities[2])}`;
+                    console.log('Opening Google Maps with 3 cities in order:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                    return;
+                } else if (window._promptCities.length === 4) {
+                    // 4 şehir varsa: A -> B -> C -> D (sırayla)
+                    const googleMapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(window._promptCities[0])}/${encodeURIComponent(window._promptCities[1])}/${encodeURIComponent(window._promptCities[2])}/${encodeURIComponent(window._promptCities[3])}`;
+                    console.log('Opening Google Maps with 4 cities in order:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                    return;
+                } else {
+                    // 4'ten fazla şehir varsa sırayla ekle
+                    const citiesStr = window._promptCities.map(city => encodeURIComponent(city)).join('/');
+                    const googleMapsUrl = `https://www.google.com/maps/dir/${citiesStr}`;
+                    console.log('Opening Google Maps with multiple cities in order:', googleMapsUrl);
+                    window.open(googleMapsUrl, '_blank');
+                    return;
+                }
+            }
+            
+            // 2. Polyline'dan detaylı rota oluştur (alternatif yöntem)
+            if (route.polyline && route.polyline.length > 0) {
+                try {
+                    const coordinates = decodePolyline(route.polyline);
+                    console.log('Decoded polyline coordinates:', coordinates.length, 'points');
+                    
+                    if (coordinates.length >= 2) {
+                        // Koordinatları kontrol et
+                        const validCoordinates = coordinates.filter(point => 
+                            point && typeof point.lat === 'number' && typeof point.lng === 'number' &&
+                            !isNaN(point.lat) && !isNaN(point.lng) &&
+                            point.lat >= -90 && point.lat <= 90 &&
+                            point.lng >= -180 && point.lng <= 180
+                        );
+                        
+                        if (validCoordinates.length < 2) {
+                            console.error('Not enough valid coordinates:', validCoordinates.length);
+                            throw new Error('Invalid coordinates');
+                        }
+                        
+                        // Karmaşık rotalar için önemli noktaları seç
+                        const startPoint = validCoordinates[0];
+                        const endPoint = validCoordinates[validCoordinates.length - 1];
+                        
+                        console.log('Start point:', startPoint);
+                        console.log('End point:', endPoint);
+                        
+                        // Rota uzunluğuna göre strateji belirle
+                        if (validCoordinates.length > 100) {
+                            // Çok uzun rota - önemli dönüş noktalarını seç
+                            const step = Math.floor(validCoordinates.length / 10); // 10 önemli nokta
+                            const importantPoints = [];
+                            
+                            for (let i = 0; i < validCoordinates.length; i += step) {
+                                if (importantPoints.length < 10) {
+                                    importantPoints.push(validCoordinates[i]);
+                                }
+                            }
+                            
+                            // Son noktayı ekle
+                            if (importantPoints[importantPoints.length - 1] !== endPoint) {
+                                importantPoints.push(endPoint);
+                            }
+                            
+                            // Google Maps URL'si oluştur
+                            const pointsStr = importantPoints.map(point => 
+                                `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`
+                            ).join('/');
+                            
+                            const googleMapsUrl = `https://www.google.com/maps/dir/${pointsStr}`;
+                            console.log('Opening Google Maps with complex route:', googleMapsUrl);
+                            window.open(googleMapsUrl, '_blank');
+                            return;
+                        } else {
+                            // Kısa rota - tüm noktaları kullan
+                            const pointsStr = validCoordinates.map(point => 
+                                `${point.lat.toFixed(6)},${point.lng.toFixed(6)}`
+                            ).join('/');
+                            
+                            const googleMapsUrl = `https://www.google.com/maps/dir/${pointsStr}`;
+                            console.log('Opening Google Maps with full route:', googleMapsUrl);
+                            window.open(googleMapsUrl, '_blank');
+                            return;
+                        }
+                    } else {
+                        console.error('Not enough coordinates:', coordinates.length);
+                    }
+                } catch (error) {
+                    console.error('Polyline decode error:', error);
+                }
+            }
+            
+
+            
+            // 3. Route verilerinden başlangıç ve bitiş noktalarını al
+            if (route.route && route.route.length >= 2) {
+                const startPoint = route.route[0];
+                const endPoint = route.route[route.route.length - 1];
+                const googleMapsUrl = `https://www.google.com/maps/dir/${startPoint.lat},${startPoint.lng}/${endPoint.lat},${endPoint.lng}`;
+                console.log('Opening Google Maps with route coordinates:', startPoint, endPoint);
+                window.open(googleMapsUrl, '_blank');
+                return;
+            }
+            
+            // 4. Alternatif olarak şehir isimlerini kullan
+            if (route.summary) {
+                const cities = extractCitiesFromSummary(route.summary);
+                if (cities.length >= 2) {
+                    const googleMapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(cities[0])}/${encodeURIComponent(cities[1])}`;
+                    console.log('Opening Google Maps with cities:', cities);
+                    window.open(googleMapsUrl, '_blank');
+                    return;
+                }
+            }
+            
+            console.error('No valid coordinates found for route');
+            alert('Bu rota için Google Maps açılamıyor. Lütfen farklı bir rota deneyin.');
+        }
+        
+        // Summary'den şehir isimlerini çıkar
+        function extractCitiesFromSummary(summary) {
+            const cityNames = [
+                'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Konya', 'Gaziantep',
+                'Mersin', 'Diyarbakır', 'Samsun', 'Denizli', 'Eskişehir', 'Urfa', 'Malatya',
+                'Erzurum', 'Van', 'Batman', 'Elazığ', 'İçel', 'Kocaeli', 'Manisa', 'Kayseri',
+                'Sivas', 'Balıkesir', 'Kahramanmaraş', 'Tekirdağ', 'Sakarya', 'Aydın', 'Muğla'
+            ];
+            
+            const foundCities = [];
+            for (const city of cityNames) {
+                if (summary.toLowerCase().includes(city.toLowerCase())) {
+                    foundCities.push(city);
+                }
+            }
+            return foundCities;
+        }
+
+        // Harita tam ekran değişikliklerini dinle
+        document.addEventListener('fullscreenchange', function() {
+            const mapContainer = document.getElementById('map');
+            if (document.fullscreenElement) {
+                mapContainer.style.borderRadius = '0';
+                mapContainer.style.height = '100vh';
+            } else {
+                mapContainer.style.borderRadius = 'var(--border-radius)';
+                mapContainer.style.height = '700px';
+            }
+            // Haritayı yeniden boyutlandır
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        });
     </script>
 </body>
 </html> 

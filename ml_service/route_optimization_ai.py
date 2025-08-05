@@ -49,7 +49,7 @@ class RouteOptimizationAI:
             'güneş': 1, 'yağmur': 2, 'kar': 3, 'bulutlu': 4, 'sis': 5, 'fırtına': 6, 'rüzgar': 7
         }).fillna(1)
         
-        # Sekanslar oluştur
+        # Sekanslar oluştur 
         X, y_duration, y_cost, y_comfort = self.create_sequences(data)
         
         if len(X) == 0:

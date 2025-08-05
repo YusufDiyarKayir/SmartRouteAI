@@ -44,12 +44,12 @@ def test_sql_server_connection():
             if result:
                 print(f"✅ {conn_info['name']}: Bağlantı başarılı")
                 print(f"   📊 HistoricalWeatherDB veritabanı mevcut")
-                working_connection = conn_info
+                working_connection = conn_info #Bağlantı bilgilerini atama
                 break
             else:
                 print(f"✅ {conn_info['name']}: Bağlantı başarılı")
                 print(f"   ⚠️ HistoricalWeatherDB veritabanı bulunamadı")
-                working_connection = conn_info
+                working_connection = conn_info 
                 break
                 
         except Exception as e:

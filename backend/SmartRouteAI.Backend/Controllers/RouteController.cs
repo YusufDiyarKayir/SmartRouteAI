@@ -5,10 +5,11 @@ namespace SmartRouteAI.Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class RouteController : ControllerBase
+        
+    public class RouteController : ControllerBase       //RouteController sınıfı
     {
-        private readonly PromptAnalysisService _promptService;
-        private readonly RouteOptimizationService _routeService;
+        private readonly PromptAnalysisService _promptService; 
+        private readonly RouteOptimizationService _routeService; 
         private readonly MapService _mapService;
         private readonly AdvancedWeatherService _advancedWeatherService;
         private readonly HolidayService _holidayService;
@@ -24,9 +25,9 @@ namespace SmartRouteAI.Backend.Controllers
         }
 
         [HttpGet("health")]
-        public IActionResult Health()
+        public IActionResult Health() //Sağlık kontrolü
         {
-            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow }); //Sağlık kontrolü
         }
 
         [HttpPost("analyze-prompt")]

@@ -40,6 +40,10 @@ namespace Services
             public bool IsHoliday { get; set; } = false; // Tatil günü mü?
             public string HolidayName { get; set; } = string.Empty; // Tatil adı
             public double HolidayTrafficMultiplier { get; set; } = 1.0; // Tatil trafik çarpanı
+            public double WeatherDurationMin { get; set; } = 0.0; // Hava şartları nedeniyle varış süresi
+            public double HolidayDurationMin { get; set; } = 0.0; // Tatil günü nedeniyle varış süresi
+            public double CombinedDurationMin { get; set; } = 0.0; // Hava şartları ve tatil nedeniyle varış süresi
+            public string DurationType { get; set; } = "normal"; // normal, weather, holiday, combined
             
             // AI alanları
             public bool AIOptimized { get; set; } = false; // AI ile optimize edildi mi?
@@ -508,6 +512,33 @@ namespace Services
                             {
                                 var totalMultiplier = weatherMultiplier * holidayMultiplier;
                                 result.AdjustedDurationMin = Math.Round(result.DurationMin * totalMultiplier, 1);
+                                
+                                // Farklı süre türlerini hesapla
+                                result.WeatherDurationMin = Math.Round(result.DurationMin * weatherMultiplier, 1);
+                                result.HolidayDurationMin = Math.Round(result.DurationMin * holidayMultiplier, 1);
+                                result.CombinedDurationMin = Math.Round(result.DurationMin * totalMultiplier, 1);
+                                
+                                // Hangi süre türünün kullanılacağını belirle
+                                if (weatherMultiplier > 1.0 && holidayMultiplier > 1.0)
+                                {
+                                    result.DurationType = "combined";
+                                    result.AdjustedDurationMin = result.CombinedDurationMin;
+                                }
+                                else if (weatherMultiplier > 1.0)
+                                {
+                                    result.DurationType = "weather";
+                                    result.AdjustedDurationMin = result.WeatherDurationMin;
+                                }
+                                else if (holidayMultiplier > 1.0)
+                                {
+                                    result.DurationType = "holiday";
+                                    result.AdjustedDurationMin = result.HolidayDurationMin;
+                                }
+                                else
+                                {
+                                    result.DurationType = "normal";
+                                    result.AdjustedDurationMin = result.DurationMin;
+                                }
                             }
                             
                             // Etki açıklamalarını birleştir
@@ -524,10 +555,17 @@ namespace Services
                             // Sadece tatil etkisi varsa
                             if (holidayMultiplier != 1.0)
                             {
-                                result.AdjustedDurationMin = Math.Round(result.DurationMin * holidayMultiplier, 1);
+                                result.HolidayDurationMin = Math.Round(result.DurationMin * holidayMultiplier, 1);
+                                result.DurationType = "holiday";
+                                result.AdjustedDurationMin = result.HolidayDurationMin;
                                 result.WeatherImpact = string.Join("; ", holidayImpact);
                                 Console.WriteLine($"[DURATION] Original: {result.DurationMin} min, Holiday: {holidayMultiplier:F2}x, Final: {result.AdjustedDurationMin} min");
                                 Console.WriteLine($"[IMPACT] Holiday impacts: {result.WeatherImpact}");
+                            }
+                            else
+                            {
+                                result.DurationType = "normal";
+                                result.AdjustedDurationMin = result.DurationMin;
                             }
                         }
                     }

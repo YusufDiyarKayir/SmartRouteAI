@@ -5,76 +5,76 @@ namespace Services
 {
     public class AdvancedWeatherService
     {
-        private readonly HttpClient _httpClient;
-        private readonly ILogger<AdvancedWeatherService> _logger;
-        private readonly string _mlServiceUrl;
+        private readonly HttpClient _httpClient; //HTTP istekleri için kullanılan HttpClient
+        private readonly ILogger<AdvancedWeatherService> _logger; //Loglama için kullanılan ILogger
+        private readonly string _mlServiceUrl; //ML servis URL
 
-        public AdvancedWeatherService(IHttpClientFactory httpClientFactory, ILogger<AdvancedWeatherService> logger, IConfiguration config)
+        public AdvancedWeatherService(IHttpClientFactory httpClientFactory, ILogger<AdvancedWeatherService> logger, IConfiguration config) //HttpClientFactory, ILogger ve IConfiguration parametreleri alan constructor
         {
-            _httpClient = httpClientFactory.CreateClient();
-            _logger = logger;
-            _mlServiceUrl = config["MLService:Url"] ?? "http://localhost:5001";
+            _httpClient = httpClientFactory.CreateClient(); //HttpClient oluştur
+            _logger = logger; //Logger'ı atama
+            _mlServiceUrl = config["MLService:Url"] ?? "http://localhost:5001"; //ML servis URL'yi atama
         }
 
-        public class WeatherPrediction
+        public class WeatherPrediction //Hava durumu tahmini için kullanılan sınıf
         {
             public string City { get; set; } = string.Empty;
             public string Date { get; set; } = string.Empty;
             public int Month { get; set; }
             public string Season { get; set; } = string.Empty;
-            [System.Text.Json.Serialization.JsonPropertyName("predicted_weather")]
+            [System.Text.Json.Serialization.JsonPropertyName("predicted_weather")] //Tahmin edilen hava durumu JSON serilizasyonu için kullanılan JsonPropertyName
             public string PredictedWeather { get; set; } = string.Empty;
             public double Confidence { get; set; }
-            [System.Text.Json.Serialization.JsonPropertyName("avg_temperature")]
+            [System.Text.Json.Serialization.JsonPropertyName("avg_temperature")] //Ortalama sıcaklık JSON serilizasyonu için kullanılan JsonPropertyName
             public double AvgTemperature { get; set; }
-            [System.Text.Json.Serialization.JsonPropertyName("climate_zone")]
+            [System.Text.Json.Serialization.JsonPropertyName("climate_zone")] //iklim bölgesi JSON serilizasyonu için kullanılan JsonPropertyName
             public string ClimateZone { get; set; } = string.Empty;
-            [System.Text.Json.Serialization.JsonPropertyName("traffic_multiplier")]
+            [System.Text.Json.Serialization.JsonPropertyName("traffic_multiplier")] //trafik çarpanı JSON serilizasyonu için kullanılan JsonPropertyName
             public double TrafficMultiplier { get; set; }
-            [System.Text.Json.Serialization.JsonPropertyName("weather_duration_impact")]
+            [System.Text.Json.Serialization.JsonPropertyName("weather_duration_impact")] //Hava durumu süresi çarpanı JSON serilizasyonu için kullanılan JsonPropertyName
             public double WeatherDurationImpact { get; set; }
-            [System.Text.Json.Serialization.JsonPropertyName("is_holiday")]
+            [System.Text.Json.Serialization.JsonPropertyName("is_holiday")] //Tatil kontrolü JSON serilizasyonu için kullanılan JsonPropertyName
             public bool IsHoliday { get; set; }
-            [System.Text.Json.Serialization.JsonPropertyName("holiday_name")]
+            [System.Text.Json.Serialization.JsonPropertyName("holiday_name")] //Tatil adı JSON serilizasyonu için kullanılan JsonPropertyName
             public string HolidayName { get; set; } = string.Empty;
             public string Explanation { get; set; } = string.Empty;
-            [System.Text.Json.Serialization.JsonPropertyName("traffic_explanation")]
+            [System.Text.Json.Serialization.JsonPropertyName("traffic_explanation")] //Trafik açıklaması JSON serilizasyonu için kullanılan JsonPropertyName
             public string TrafficExplanation { get; set; } = string.Empty;
         }
 
         public class RouteSummary
         {
-            public int TotalCities { get; set; }
+            public int TotalCities { get; set; } 
             public double AvgConfidence { get; set; }
             public bool IsHolidayPeriod { get; set; }
             public string HolidayName { get; set; } = string.Empty;
-            public List<string> WeatherConditions { get; set; } = new();
-            public List<string> ClimateZones { get; set; } = new();
-            public double AvgTrafficMultiplier { get; set; }
-            public double TotalDurationImpact { get; set; }
+            public List<string> WeatherConditions { get; set; } = new(); //Hava durumu koşulları
+            public List<string> ClimateZones { get; set; } = new(); //İklim bölgeleri
+            public double AvgTrafficMultiplier { get; set; } //Ortalama trafik çarpanı
+            public double TotalDurationImpact { get; set; } //Toplam süre etkisi
         }
 
-        public class RouteRecommendation
+        public class RouteRecommendation //Rota önerisi
         {
-            public string Type { get; set; } = string.Empty;
-            public string Priority { get; set; } = string.Empty;
-            public string Message { get; set; } = string.Empty;
-            public string Impact { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty; //Rota tipi
+            public string Priority { get; set; } = string.Empty; //Öncelik
+            public string Message { get; set; } = string.Empty; //Mesaj
+            public string Impact { get; set; } = string.Empty; //Etkisi
         }
 
-        public class AdvancedWeatherResponse
+        public class AdvancedWeatherResponse //Hava durumu yanıtı
         {
-            public List<WeatherPrediction> Predictions { get; set; } = new();
-            public RouteSummary RouteSummary { get; set; } = new();
+            public List<WeatherPrediction> Predictions { get; set; } = new(); //Hava durumu tahminleri
+            public RouteSummary RouteSummary { get; set; } = new(); //Rota özeti
         }
 
-        public class RouteRecommendationsResponse
+        public class RouteRecommendationsResponse //Rota önerileri yanıtı
         {
-            public AdvancedWeatherResponse WeatherAnalysis { get; set; } = new();
-            public List<RouteRecommendation> RouteRecommendations { get; set; } = new();
-            public Dictionary<string, object> CostAnalysis { get; set; } = new();
-            public Dictionary<string, object> TrafficAnalysis { get; set; } = new();
-            public Dictionary<string, object> WeatherImpact { get; set; } = new();
+            public AdvancedWeatherResponse WeatherAnalysis { get; set; } = new(); //Hava durumu analizi
+            public List<RouteRecommendation> RouteRecommendations { get; set; } = new(); //Rota önerileri
+            public Dictionary<string, object> CostAnalysis { get; set; } = new(); //Maliyet analizi
+            public Dictionary<string, object> TrafficAnalysis { get; set; } = new(); //Trafik analizi
+            public Dictionary<string, object> WeatherImpact { get; set; } = new(); //Hava durumu etkisi
         }
 
         public async Task<AdvancedWeatherResponse> GetAdvancedWeatherPredictionsAsync(List<string> cities, string date, List<string> userWeatherConditions = null)
@@ -310,12 +310,12 @@ namespace Services
             return month is 6 or 7 or 8 or 9 ? "güneş" : "yağmur";
         }
 
-        public async Task<bool> IsMLServiceHealthyAsync()
+        public async Task<bool> IsMLServiceHealthyAsync() //ML servisi sağlık kontrolü
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_mlServiceUrl}/health");
-                return response.IsSuccessStatusCode;
+                var response = await _httpClient.GetAsync($"{_mlServiceUrl}/health"); //ML servisi sağlık kontrolü
+                return response.IsSuccessStatusCode; //ML servisi sağlık kontrolü
             }
             catch
             {

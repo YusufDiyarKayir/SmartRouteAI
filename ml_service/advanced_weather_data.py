@@ -1,14 +1,3 @@
-"""
-ML Tabanlı Hava Durumu ve Trafik Tahmin Sistemi
-
-Bu modül, coğrafi ve mevsimsel faktörlere dayalı hava durumu ve trafik tahminleri yapar.
-Tatil kontrolü artık HolidayService tarafından yapılmaktadır.
-
-Özellikler:
-- Coğrafi faktörlere dayalı hava durumu tahmini
-- Nüfus ve mevsimsel trafik yoğunluğu tahmini
-- ML modelleri ile tahmin doğruluğu artırımı
-"""
 
 import json
 import datetime
@@ -26,19 +15,19 @@ import random
 #ML hava durumu veritabanı sınıfı
 class MLWeatherDatabase:
     def __init__(self):
-        self.weather_model = None
-        self.temperature_model = None
-        self.traffic_model = None
-        self.scaler = StandardScaler()
-        self.weather_encoder = LabelEncoder()
-        self.climate_encoder = LabelEncoder()
+        self.weather_model = None #Hava durumu modeli
+        self.temperature_model = None #Sıcaklık modeli
+        self.traffic_model = None #Trafik modeli
+        self.scaler = StandardScaler() #Ölçekleyici
+        self.weather_encoder = LabelEncoder() #Hava durumu kodlayıcı
+        self.climate_encoder = LabelEncoder() #İklim kodlayıcı
         
         # Türkiye şehirleri coğrafi verileri
         self.cities_data = self._load_cities_geographic_data()
         
         # Modelleri yükle veya eğit
         self.load_or_train_models()
-        
+                
         print("🤖 ML Tabanlı Hava Durumu Sistemi Başlatıldı")
         print(f"📊 {len(self.cities_data)} şehir için ML modelleri hazır")
     

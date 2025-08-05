@@ -190,15 +190,32 @@ app.MapPost("/route", async (RouteRequest request) =>
                 {
                     foreach (var step in leg.steps)
                     {
-                        if (step.html_instructions != null && (step.html_instructions.ToLower().Contains("toll") || step.html_instructions.ToLower().Contains("ücretli")))
-                            tollCount++;
+                        if (step.html_instructions != null)
+                        {
+                            var instruction = step.html_instructions.ToLower();
+                            if (instruction.Contains("toll") || 
+                                instruction.Contains("ücretli") || 
+                                instruction.Contains("otoyol") ||
+                                instruction.Contains("highway") ||
+                                instruction.Contains("motorway") ||
+                                instruction.Contains("expressway") ||
+                                instruction.Contains("otoban") ||
+                                instruction.Contains("geçiş") ||
+                                instruction.Contains("köprü") ||
+                                instruction.Contains("tünel"))
+                            {
+                                tollCount++;
+                            }
+                        }
                     }
                 }
 
-                string tollClass = "Yok";
+                string tollClass = "Ücretsiz";
                 if (tollCount == 1 || tollCount == 2) tollClass = "Orta";
                 else if (tollCount >= 3) tollClass = "Yüksek";
-                string tollInfo = $"Tahmini {tollCount} adet ücretli geçiş olabilir.";
+                string tollInfo = tollCount == 0 ? "Ücretsiz rota" : $"Tahmini {tollCount} adet ücretli geçiş olabilir.";
+                
+
 
                 string title = $"Alternatif {i+1}";
                 if (i == minDurationIdx) title += " - En hızlı";
@@ -208,7 +225,7 @@ app.MapPost("/route", async (RouteRequest request) =>
                 var arrival = dt.AddMinutes(durationMin);
                 string arrivalStr = arrival.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"));
 
-                routes.Add(new {
+                var routeData = new {
                     title,
                     distanceKm = Math.Round(distanceKm, 2),
                     estimatedDurationMinutes = Math.Round(durationMin, 1),
@@ -218,7 +235,10 @@ app.MapPost("/route", async (RouteRequest request) =>
                     tollInfo,
                     arrivalStr,
                     weatherDesc
-                });
+                };
+                
+
+                routes.Add(routeData);
             }
         }
     }
