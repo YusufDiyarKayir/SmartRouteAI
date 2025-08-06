@@ -1,64 +1,55 @@
 {
-  "timestamp": "2025-08-06T09:49:33.841893",
-  "duration_seconds": 38.097883,
+  "test_timestamp": "2025-08-06 13:55",
+  "duration_seconds": 8.852438,
   "total_tests": 9,
-  "successful_tests": 8,
-  "failed_tests": 1,
-  "success_rate": 88.88888888888889,
+  "successful_tests": 9,
+  "failed_tests": 0,
+  "success_rate": 100.0,
   "results": {
     "Backend Sağlık Kontrolü": {
       "success": true,
       "message": "Status: healthy",
-      "details": "",
-      "timestamp": "2025-08-06T09:48:55.775224"
+      "details": ""
     },
     "ML Servisi Sağlık Kontrolü": {
       "success": true,
       "message": "Status: healthy",
-      "details": "",
-      "timestamp": "2025-08-06T09:48:57.851886"
+      "details": ""
     },
     "Model Dosyaları Kontrolü": {
       "success": true,
       "message": "8 model dosyası mevcut",
-      "details": "",
-      "timestamp": "2025-08-06T09:48:57.853238"
+      "details": ""
     },
     "AI Model Yükleme Testi": {
       "success": true,
       "message": "ML servisi çalışıyor (status: healthy, models: False)",
-      "details": "",
-      "timestamp": "2025-08-06T09:48:59.889945"
+      "details": ""
     },
     "Prompt Analizi Testi": {
       "success": true,
       "message": "Kaynak: İstanbul, Hedef: Ankara, Hava: ['yağmurlu']",
-      "details": "",
-      "timestamp": "2025-08-06T09:49:00.236955"
+      "details": ""
     },
     "Hava Durumu Tahmini Testi": {
       "success": true,
       "message": "2 tahmin yapıldı",
-      "details": "",
-      "timestamp": "2025-08-06T09:49:02.305810"
+      "details": ""
     },
     "Rota Optimizasyonu Testi": {
-      "success": false,
-      "message": "Hata: HTTPConnectionPool(host='localhost', port=5077): Read timed out. (read timeout=30)",
-      "details": "",
-      "timestamp": "2025-08-06T09:49:32.321462"
+      "success": true,
+      "message": "2 rota bulundu",
+      "details": ""
     },
     "Performans Testi": {
       "success": true,
-      "message": "Yanıt süresi: 1.51 saniye",
-      "details": "",
-      "timestamp": "2025-08-06T09:49:33.832187"
+      "message": "Yanıt süresi: 0.33 saniye",
+      "details": ""
     },
     "Hata Yönetimi Testi": {
       "success": true,
       "message": "Geçersiz istek düzgün işlendi",
-      "details": "",
-      "timestamp": "2025-08-06T09:49:33.841198"
+      "details": ""
     }
   }
 }

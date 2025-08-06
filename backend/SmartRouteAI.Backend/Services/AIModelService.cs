@@ -13,7 +13,7 @@ namespace Services
         public AIModelService(IHttpClientFactory httpClientFactory, IConfiguration config, ILogger<AIModelService> logger)
         {
             _httpClient = httpClientFactory.CreateClient();
-            _aiServiceUrl = config["AIService:Url"] ?? "http://localhost:5001";
+            _aiServiceUrl = Environment.GetEnvironmentVariable("ML_SERVICE_URL") ?? "http://localhost:5001";
             _useSimpleAI = config.GetValue<bool>("AIService:UseSimpleAI", true);
             _logger = logger;
         }

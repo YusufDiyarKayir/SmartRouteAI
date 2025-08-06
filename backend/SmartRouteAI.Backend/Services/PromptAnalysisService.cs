@@ -34,8 +34,8 @@ namespace Services
         //Prompt Analiz kısmı. Şehir isimleri ve İstanbul'un ilçelerini bu kısımda analiz ediyoruz.
         public PromptAnalysisService(IConfiguration config)
         {
-            var endpoint = config["AzureCognitive:Endpoint"] ?? "";
-            var apiKey = config["AzureCognitive:ApiKey"] ?? "";
+            var endpoint = Environment.GetEnvironmentVariable("AZURE_COGNITIVE_ENDPOINT") ?? "";
+            var apiKey = Environment.GetEnvironmentVariable("AZURE_COGNITIVE_API_KEY") ?? "";
             var credentials = new AzureKeyCredential(apiKey);
             _client = new TextAnalyticsClient(new Uri(endpoint), credentials);
             _turkeyCities = new List<string> {

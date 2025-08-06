@@ -2,6 +2,10 @@ using System.Net.Http; // HTTP istekleri için gerekli kütüphane
 using System.Net.Http.Json; // JSON verileriyle HTTP işlemleri için kolaylık sağlar
 using Azure.AI.TextAnalytics;
 using Google.OrTools.ConstraintSolver;
+using DotNetEnv;
+
+// .env dosyasını yükle
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args); // Web uygulaması için yapılandırıcı oluştur
 
@@ -19,17 +23,16 @@ builder.Services.AddAuthorization();
 // CORS (Cross-Origin Resource Sharing) ayarları ekleniyor
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddDefaultPolicy(policy => // CORS politikası
     {
         policy.AllowAnyOrigin()   // Tüm kaynaklara izin ver
               .AllowAnyHeader()   // Tüm başlıklara izin ver
-              .AllowAnyMethod();  // GET, POST, PUT vb. tüm HTTP metodlarına izin ver
+              .AllowAnyMethod();  // HTTP metodlarına izin ver
     });
 });
 
-// Swagger ve Endpoint desteği ekleniyor (dökümantasyon için)
-builder.Services.AddEndpointsApiExplorer(); 
-builder.Services.AddSwaggerGen(); 
+builder.Services.AddEndpointsApiExplorer();  // Endpoint desteği
+builder.Services.AddSwaggerGen();  // Swagger için
 
 var app = builder.Build(); // Uygulama nesnesi oluşturuluyor
 
@@ -52,7 +55,7 @@ app.UseDefaultFiles();
 // Frontend için fallback route
 app.MapFallbackToFile("index.html");
 
-// Hava durumu özetleri için örnek string dizisi
+// Hava durumu özetleri için örnek oluşturabilmek için gerekli
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", 
@@ -63,7 +66,7 @@ var summaries = new[]
 app.MapGet("/weatherforecast", () =>
 {
     // 5 günlük hava durumu simülasyonu üretiliyor
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast =  Enumerable.Range(1, 5).Select(index => // 1-5 arasında gün döngü oluşturuyor
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)), // ileri tarihler
@@ -80,7 +83,7 @@ app.MapGet("/weatherforecast", () =>
 app.MapPost("/route", async (RouteRequest request) =>
 {
     // Koordinatlar ve zaman bilgileri alınıyor
-    double fromLat = request.FromLat;
+    double fromLat = request.FromLat; 
     double fromLng = request.FromLng;
     double toLat = request.ToLat;
     double toLng = request.ToLng;
@@ -91,23 +94,23 @@ app.MapPost("/route", async (RouteRequest request) =>
     var epoch = ((DateTimeOffset)dt).ToUnixTimeSeconds(); // UNIX zamanına çevrilir
 
     // 1. Tatil kontrolü: Abstract API kullanılarak
-    bool isHoliday = false;
+    bool isHoliday = false; // Tatil kontrolü
     try {
-        using var http = new HttpClient();
-        string holidayApiKey = "e07f6c1c-7dad-4745-8779-d91c690c059c";
+        using var http = new HttpClient(); // HTTP isteği oluşturuluyor
+        string holidayApiKey = Environment.GetEnvironmentVariable("HOLIDAY_API_KEY") ?? "";
         string holidayUrl = $"https://holidays.abstractapi.com/v1/?api_key={holidayApiKey}&country=TR&year={dt.Year}&month={dt.Month}&day={dt.Day}";
-        var holidayResp = await http.GetStringAsync(holidayUrl);
-        isHoliday = !string.IsNullOrWhiteSpace(holidayResp) && holidayResp != "[]";
-    } catch { }
+        var holidayResp = await http.GetStringAsync(holidayUrl); // Abstract API'den gelen yanıt
+        isHoliday = !string.IsNullOrWhiteSpace(holidayResp) && holidayResp != "[]"; // Yanıt boş değilse ve [] değilse tatil kontrolü
+    } catch { } // Hata olursa tatil kontrolü yapılmaz
 
     // 2. Hava durumu bilgisi: OpenWeatherMap API üzerinden
     string weather = "Sunny";
-    string weatherDesc = "";
+    string weatherDesc = ""; // Hava durumu açıklaması
     try {
-        using var http = new HttpClient();
-        string weatherApiKey = "0d97a7dabc935b1c450dbe82a3234617";
-        string forecastUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat={fromLat}&lon={fromLng}&appid={weatherApiKey}&lang=tr&units=metric";
-        var forecastResp = await http.GetFromJsonAsync<OpenWeatherForecastResponse>(forecastUrl);
+        using var http = new HttpClient(); // HTTP isteği oluşturuluyor
+        string weatherApiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? ""; // OpenWeatherMap API anahtarı
+        string forecastUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat={fromLat}&lon={fromLng}&appid={weatherApiKey}&lang=tr&units=metric"; // OpenWeatherMap API URL'si
+        var forecastResp = await http.GetFromJsonAsync<OpenWeatherForecastResponse>(forecastUrl); // OpenWeatherMap API'den gelen yanıt
         if (forecastResp != null && forecastResp.list.Length > 0) {
             // En yakın tarihli hava verisi seçiliyor
             var closest = forecastResp.list.OrderBy(x => Math.Abs((DateTimeOffset.FromUnixTimeSeconds(x.dt).DateTime - dt).TotalMinutes)).First();
@@ -133,7 +136,7 @@ app.MapPost("/route", async (RouteRequest request) =>
     else if (hour >= 11 && hour <= 16) trafficLevel = "Medium"; // Orta yoğunluk
 
     // 4. Google Directions API üzerinden güzergahlar alınıyor
-    string googleApiKey = "AIzaSyCTl8gXrbbcPDOolXt8OpuzQghwXQl_N9Y";
+    string googleApiKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "";
     string googleUrl = $"https://maps.googleapis.com/maps/api/directions/json?origin={fromLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{fromLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}&destination={toLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{toLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}&departure_time={epoch}&alternatives=true&key={googleApiKey}";
     
     Console.WriteLine("[GOOGLE URL] " + googleUrl); // Konsola URL yazdır
@@ -150,25 +153,25 @@ app.MapPost("/route", async (RouteRequest request) =>
         if (googleObj != null && googleObj.routes.Length > 0)
         {
             // En hızlı ve en az ücretli rota seçimi
-            int minDurationIdx = 0;
-            int minTollIdx = 0;
-            int minDuration = int.MaxValue;
-            int minToll = int.MaxValue;
+            int minDurationIdx = 0; // En hızlı rota indeksi
+            int minTollIdx = 0; // En az ücretli rota indeksi
+            int minDuration = int.MaxValue; // En hızlı rota süresi
+            int minToll = int.MaxValue; // En az ücretli rota ücreti
 
             // Güzergahları kontrol et
-            for (int i = 0; i < googleObj.routes.Length; i++)
+            for (int i = 0; i < googleObj.routes.Length; i++) // Güzergahları kontrol et
             {
-                var r = googleObj.routes[i];
-                var leg = r.legs[0];
-                double durationMin = leg.duration_in_traffic != null ? leg.duration_in_traffic.value / 60.0 : leg.duration.value / 60.0;
-                int tollCount = 0;
+                var r = googleObj.routes[i]; // Güzergah
+                var leg = r.legs[0]; // Güzergahın ilk adımı
+                double durationMin = leg.duration_in_traffic != null ? leg.duration_in_traffic.value / 60.0 : leg.duration.value / 60.0; // Güzergahın süresi
+                int tollCount = 0; // Ücretli geçiş sayısı
 
-                if (leg.steps != null)
+                if (leg.steps != null) // Adımlar varsa
                 {
-                    foreach (var step in leg.steps)
+                    foreach (var step in leg.steps) // Adımları kontrol et
                     {
-                        if (step.html_instructions != null && (step.html_instructions.ToLower().Contains("toll") || step.html_instructions.ToLower().Contains("ücretli")))
-                            tollCount++;
+                        if (step.html_instructions != null && (step.html_instructions.ToLower().Contains("toll") || step.html_instructions.ToLower().Contains("ücretli"))) // Ücretli geçiş varsa
+                            tollCount++; // Ücretli geçiş sayısını artır
                     }
                 }
 
@@ -310,7 +313,7 @@ public class GooglePolyline {
 public class OpenWeatherResponse {
     public WeatherDesc[] weather { get; set; }
 }
-public class WeatherDesc {
+public class WeatherDesc { 
     public string main { get; set; }
     public string description { get; set; }
 }

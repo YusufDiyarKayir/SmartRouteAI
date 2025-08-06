@@ -13,7 +13,7 @@ namespace Services
         
         public RouteOptimizationService(IConfiguration config, IHttpClientFactory httpClientFactory, HolidayService holidayService, AIModelService aiModelService)
         {
-            _googleApiKey = config["GoogleMaps:ApiKey"] ?? "";
+            _googleApiKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "";
             _httpClientFactory = httpClientFactory;
             _holidayService = holidayService;
             _aiModelService = aiModelService;

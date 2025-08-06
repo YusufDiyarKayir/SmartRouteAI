@@ -5,7 +5,7 @@ namespace Services
         private readonly string _apiKey;
         public MapService(IConfiguration config)
         {
-            _apiKey = config["GoogleMaps:ApiKey"] ?? "";
+            _apiKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "";
         }
 
         // Şimdilik mock bir harita url'si dönüyoruz

@@ -528,29 +528,7 @@
             }
         };
 
-        // Haritadan tıklama
-        map.on('click', function(e) {
-            if (!fromMarker) {
-                fromCoord = e.latlng;
-                fromMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup('Başlangıç').openPopup();
-                fromMarker.on('dragend', function(ev) {
-                    fromCoord = ev.target.getLatLng();
-                    document.getElementById('from-place').value = '';
-                    updateCoords();
-                });
-                document.getElementById('from-place').value = '';
-            } else if (!toMarker) {
-                toCoord = e.latlng;
-                toMarker = L.marker(e.latlng, { draggable: true, icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]}) }).addTo(map).bindPopup('Hedef').openPopup();
-                toMarker.on('dragend', function(ev) {
-                    toCoord = ev.target.getLatLng();
-                    document.getElementById('to-place').value = '';
-                    updateCoords();
-                });
-                document.getElementById('to-place').value = '';
-            }
-            updateCoords();
-        });
+        // Haritadan tıklama kaldırıldı - sadece dropdown menülerden seçim yapılabilir
 
         document.getElementById('reset-btn').onclick = function() {
             if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; fromCoord = null; }
