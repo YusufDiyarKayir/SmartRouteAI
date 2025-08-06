@@ -78,6 +78,23 @@ backend/
 - Python 3.8+
 - Git
 
+### API Anahtarları Kurulumu
+
+1. **OpenWeatherMap API Anahtarı:**
+   - [OpenWeatherMap](https://openweathermap.org/api) sitesine gidin
+   - Ücretsiz hesap oluşturun
+   - API anahtarınızı alın
+
+2. **Google Maps API Anahtarı (Opsiyonel):**
+   - [Google Cloud Console](https://console.cloud.google.com/) sitesine gidin
+   - Maps JavaScript API'yi etkinleştirin
+   - API anahtarınızı alın
+
+3. **Holiday API Anahtarı (Opsiyonel):**
+   - [Abstract API](https://www.abstractapi.com/holidays-api) sitesine gidin
+   - Ücretsiz hesap oluşturun
+   - API anahtarınızı alın
+
 ### Adımlar
 
 1. **Projeyi klonlayın:**
@@ -86,13 +103,25 @@ git clone https://github.com/YusufDiyarKayir/SmartRouteAI.git
 cd SmartRouteAI
 ```
 
-2. **Python bağımlılıklarını yükleyin:**
+2. **Environment dosyasını oluşturun:**
 ```bash
-cd backend
+# env.example dosyasını .env olarak kopyalayın
+cp env.example .env
+
+# .env dosyasını düzenleyin ve API anahtarlarınızı ekleyin
+# Örnek:
+# OPENWEATHER_API_KEY="your_api_key_here"
+# GOOGLE_MAPS_API_KEY="your_google_maps_key_here"
+# HOLIDAY_API_KEY="your_holiday_api_key_here"
+```
+
+3. **Python bağımlılıklarını yükleyin:**
+```bash
+cd ml_service
 pip install -r requirements.txt
 ```
 
-3. **Projeyi başlatın:**
+4. **Projeyi başlatın:**
 ```bash
 cd ..
 .\projeyi_baslat.ps1

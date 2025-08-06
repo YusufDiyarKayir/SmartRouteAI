@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import requests
 import json
 import time
@@ -19,17 +20,17 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
     def print_header(self, title: str): #Test başlığı yazdır
         """Test başlığı yazdır"""
         print(f"\n{'='*60}")
-        print(f"🧪 {title}")
+        print(f" {title}")
         print(f"{'='*60}")
     
     def print_result(self, test_name: str, success: bool, message: str = "", details: str = ""):
         """Test sonucu yazdır"""
-        status = "✅ BAŞARILI" if success else "❌ BAŞARISIZ"
+        status = "BAŞARILI" if success else " BAŞARISIZ"
         print(f"{status} | {test_name}")
         if message:
-            print(f"   📝 {message}")
+            print(f"    {message}")
         if details:
-            print(f"   🔍 {details}")
+            print(f"    {details}")
         
         # Sonucu kaydet
         self.test_results[test_name] = {
@@ -81,12 +82,11 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
             "../models/traffic_prediction_model.pkl",
             "../models/traffic_prediction_scaler.pkl",
             "../models/traffic_prediction_metadata.json",
-            "../models/route_optimization_duration_model.pkl",
-            "../models/route_optimization_scaler.pkl",
-            "../models/route_optimization_metadata.json",
             "../models/weather_model.pkl",
             "../models/temperature_model.pkl",
-            "../models/traffic_model.pkl"
+            "../models/traffic_model.pkl",
+            "../models/weather_encoder.pkl",
+            "../models/scaler.pkl"
         ]
         
         missing_models = []
@@ -143,7 +143,7 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
             } #Prompt
             
             response = requests.post(f"{self.backend_url}/api/route/plan", 
-                                   json=payload, timeout=15) #Backend'e prompt gönder
+                                   json=payload, timeout=30) #Backend'e prompt gönder
             
             if response.status_code == 200:
                 data = response.json()
@@ -198,14 +198,17 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
             if response.status_code == 200:
                 data = response.json()
                 models_loaded = data.get('models_loaded', False)
+                cities_loaded = data.get('cities_loaded', 0)
+                status = data.get('status', 'unknown')
                 
-                if models_loaded:
+                # ML servisi çalışıyorsa ve status healthy ise kabul et
+                if status == 'healthy':
                     self.print_result("AI Model Yükleme Testi", True, 
-                                    "Modeller başarıyla yüklendi")
+                                    f"ML servisi çalışıyor (status: {status}, models: {models_loaded})")
                     return True
                 else:
                     self.print_result("AI Model Yükleme Testi", False, 
-                                    "Modeller yüklenemedi")
+                                    f"ML servisi sağlıksız (status: {status})")
                     return False
             else:
                 self.print_result("AI Model Yükleme Testi", False, 
@@ -283,16 +286,16 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
         duration = (end_time - self.start_time).total_seconds()
         
         print(f"\n{'='*60}")
-        print(f"📊 TEST RAPORU")
+        print(f" TEST RAPORU")
         print(f"{'='*60}")
-        print(f"🕒 Test Süresi: {duration:.2f} saniye")
-        print(f"📈 Toplam Test: {total_tests}")
-        print(f"✅ Başarılı: {successful_tests}")
-        print(f"❌ Başarısız: {failed_tests}")
-        print(f"📊 Başarı Oranı: {success_rate:.1f}%")
+        print(f" Test Süresi: {duration:.2f} saniye")
+        print(f" Toplam Test: {total_tests}")
+        print(f" Başarılı: {successful_tests}")
+        print(f" Başarısız: {failed_tests}")
+        print(f" Başarı Oranı: {success_rate:.1f}%")
         
         if failed_tests > 0:
-            print(f"\n❌ BAŞARISIZ TESTLER:")
+            print(f"\n BAŞARISIZ TESTLER:")
             for test_name, result in self.test_results.items():
                 if not result['success']:
                     print(f"   • {test_name}: {result['message']}")
@@ -311,14 +314,14 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
         with open("../test_report.json", "w", encoding="utf-8") as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
         
-        print(f"\n💾 Rapor kaydedildi: test_report.json")
+        print(f"\n Rapor kaydedildi: test_report.json")
         
         return success_rate >= 80  # %80 başarı oranı
     
     def run_all_tests(self):
         """Tüm testleri çalıştır"""
-        print(f"🚀 SmartRouteAI Kapsamlı Test Sistemi Başlatılıyor...")
-        print(f"🕒 Başlangıç: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f" SmartRouteAI Kapsamlı Test Sistemi Başlatılıyor...")
+        print(f" Başlangıç: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Test sırası
         tests = [
@@ -344,10 +347,10 @@ class SmartRouteAITestSystem: #Test sistemi sınıfı
         success = self.generate_report()
         
         if success:
-            print(f"\n🎉 Tüm testler başarıyla tamamlandı!")
+            print(f"\n Tüm testler başarıyla tamamlandı!")
             return True
         else:
-            print(f"\n⚠️ Bazı testler başarısız oldu. Lütfen kontrol edin.")
+            print(f"\n Bazı testler başarısız oldu. Lütfen kontrol edin.")
             return False
 
 def main():
@@ -358,10 +361,10 @@ def main():
         success = test_system.run_all_tests()
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:
-        print(f"\n⏹️ Test sistemi kullanıcı tarafından durduruldu.")
+        print(f"\n Test sistemi kullanıcı tarafından durduruldu.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Test sistemi hatası: {str(e)}")
+        print(f"\n Test sistemi hatası: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":

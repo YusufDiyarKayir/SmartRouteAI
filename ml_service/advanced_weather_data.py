@@ -11,6 +11,9 @@ import joblib
 import os
 from typing import Dict, List, Tuple
 import random
+import requests
+import sqlite3
+from datetime import datetime, timedelta
 
 #ML hava durumu veritabanı sınıfı
 class MLWeatherDatabase:
@@ -20,10 +23,13 @@ class MLWeatherDatabase:
         self.traffic_model = None #Trafik modeli
         self.scaler = StandardScaler() #Ölçekleyici
         self.weather_encoder = LabelEncoder() #Hava durumu kodlayıcı
-        self.climate_encoder = LabelEncoder() #İklim kodlayıcı
         
         # Türkiye şehirleri coğrafi verileri
         self.cities_data = self._load_cities_geographic_data()
+        
+        # Tarihsel veri veritabanı
+        self.db_path = "historical_weather.db"
+        self._init_database()
         
         # Modelleri yükle veya eğit
         self.load_or_train_models()
@@ -124,136 +130,223 @@ class MLWeatherDatabase:
             "Bilecik": {"lat": 40.1506, "lon": 29.9792, "elevation": 850, "climate": "Ege", "population": 228334}
         }
     
-    def generate_training_data(self) -> pd.DataFrame:
-        """ML modelleri için eğitim verisi oluştur"""
-        print("📊 Eğitim verisi oluşturuluyor...")
+    def _init_database(self):
+        """Tarihsel veri veritabanını başlat"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        training_data = []
+        # Hava durumu verileri tablosu
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS weather_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                city TEXT NOT NULL,
+                date TEXT NOT NULL,
+                weather_condition TEXT NOT NULL,
+                temperature REAL NOT NULL,
+                humidity REAL,
+                wind_speed REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(city, date)
+            )
+        ''')
         
-        for city_name, city_data in self.cities_data.items():
-            for year in range(2020, 2025):  # 5 yıllık veri
-                for month in range(1, 13):
-                    for day in range(1, 29):  # Her ayın 28 günü
-                        # Coğrafi (enlem, boylam, yükseklik, iklim, nüfus)
-                        lat = city_data["lat"]
-                        lon = city_data["lon"]
-                        elevation = city_data["elevation"]
-                        climate = city_data["climate"]
-                        population = city_data["population"]
-                        
-                        # Tarih yıl ay gün
-                        date = datetime.datetime(year, month, day)
-                        day_of_week = date.weekday()
-                        day_of_year = date.timetuple().tm_yday
-                        
-                        # Mevsimsel (Ayların mevsimleri)
-                        season = self._get_season(month)
-                        
-                        # Hava durumu tahmini (coğrafi ve mevsimsel kurallara göre)
-                        weather, temp = self._predict_weather_rule_based(lat, lon, elevation, climate, month, day_of_year)
-                        
-                        # Nüfus etkili Trafik yoğunluğu tahmini
-                        traffic_multiplier = self._predict_traffic_rule_based(city_name, day_of_week, month, population)
-                        
-                        # Eğitim verisi(Şehir, enlem, boylam, yükseklik, nüfus, iklim, ay, hafta, yıl, mevsim, hava durumu, sıcaklık, trafik yoğunluğu)
-                        training_data.append({
-                            'city': city_name,
-                            'latitude': lat,
-                            'longitude': lon,
-                            'elevation': elevation,
-                            'population': population,
-                            'climate': climate,
-                            'month': month,
-                            'day_of_week': day_of_week,
-                            'day_of_year': day_of_year,
-                            'season': season,
-                            'weather': weather,
-                            'temperature': temp,
-                            'traffic_multiplier': traffic_multiplier
-                        })
+        # Şehir istatistikleri tablosu
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS city_statistics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                city TEXT NOT NULL,
+                month INTEGER NOT NULL,
+                day INTEGER NOT NULL,
+                avg_temperature REAL,
+                avg_humidity REAL,
+                avg_wind_speed REAL,
+                weather_probabilities TEXT,
+                sample_count INTEGER,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(city, month, day)
+            )
+        ''')
         
-        return pd.DataFrame(training_data)
+        conn.commit()
+        conn.close()
     
-    #Aya göre mevsim döndür
-    def _get_season(self, month: int) -> str:
-        """Ay numarasına göre mevsim döndür"""
-        if month in [12, 1, 2]:
-            return "kış"
-        elif month in [3, 4, 5]:
-            return "ilkbahar"
-        elif month in [6, 7, 8]:
-            return "yaz"
-        else:
-            return "sonbahar"
+    def collect_historical_data(self, city: str, start_date: str, end_date: str):
+        """Belirli bir şehir için tarihsel veri topla"""
+        try:
+            # OpenWeatherMap API'den veri al (ücretsiz plan)
+            from dotenv import load_dotenv
+            import os
+            load_dotenv()
+            api_key = os.getenv("OPENWEATHER_API_KEY")
+            
+            if not api_key:
+                raise ValueError("OPENWEATHER_API_KEY .env dosyasında bulunamadı!")
+                
+            base_url = "http://api.openweathermap.org/data/2.5/weather"
+            
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            current_date = start
+            while current_date <= end:
+                # Unix timestamp
+                timestamp = int(current_date.timestamp())
+                
+                # API çağrısı
+                params = {
+                    'q': f"{city},TR",
+                    'appid': api_key,
+                    'units': 'metric',
+                    'dt': timestamp
+                }
+                
+                response = requests.get(base_url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    weather_condition = data['weather'][0]['main'].lower()
+                    temperature = data['main']['temp']
+                    humidity = data['main']['humidity']
+                    wind_speed = data['wind']['speed']
+                    
+                    # Veritabanına kaydet
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO weather_data 
+                        (city, date, weather_condition, temperature, humidity, wind_speed)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (city, current_date.strftime("%Y-%m-%d"), weather_condition, 
+                          temperature, humidity, wind_speed))
+                
+                current_date += timedelta(days=1)
+            
+            conn.commit()
+            conn.close()
+            print(f"✅ {city} için tarihsel veri toplandı: {start_date} - {end_date}")
+            
+        except Exception as e:
+            print(f"❌ {city} için veri toplama hatası: {e}")
     
-    def _predict_weather_rule_based(self, lat: float, lon: float, elevation: float, climate: str, month: int, day_of_year: int) -> Tuple[str, float]:
-        """Kural tabanlı hava durumu tahmini"""
-        # Temel sıcaklık hesaplama
-        base_temp = 15 + 10 * np.sin(2 * np.pi * (day_of_year - 80) / 365)
+    def get_historical_average(self, city: str, month: int, day: int) -> Dict:
+        """Belirli bir gün için son 3 yıllık ortalama verileri al"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Son 3 yılın aynı günü için verileri al
+            current_year = datetime.now().year
+            years = [current_year - 3, current_year - 2, current_year - 1]
+            
+            temperatures = []
+            humidities = []
+            wind_speeds = []
+            weather_conditions = []
+            
+            for year in years:
+                date_str = f"{year}-{month:02d}-{day:02d}"
+                cursor.execute('''
+                    SELECT temperature, humidity, wind_speed, weather_condition
+                    FROM weather_data 
+                    WHERE city = ? AND date = ?
+                ''', (city, date_str))
+                
+                result = cursor.fetchone()
+                if result:
+                    temperatures.append(result[0])
+                    humidities.append(result[1])
+                    wind_speeds.append(result[2])
+                    weather_conditions.append(result[3])
+            
+            conn.close()
+            
+            if temperatures:
+                # Hava durumu olasılıklarını hesapla
+                weather_counts = {}
+                for condition in weather_conditions:
+                    weather_counts[condition] = weather_counts.get(condition, 0) + 1
+                
+                total_samples = len(weather_conditions)
+                weather_probabilities = {
+                    condition: count / total_samples 
+                    for condition, count in weather_counts.items()
+                }
+                
+                # En olası hava durumu
+                most_likely_weather = max(weather_probabilities, key=weather_probabilities.get)
+                
+                return {
+                    'avg_temperature': np.mean(temperatures),
+                    'avg_humidity': np.mean(humidities),
+                    'avg_wind_speed': np.mean(wind_speeds),
+                    'weather_probabilities': weather_probabilities,
+                    'most_likely_weather': most_likely_weather,
+                    'confidence': weather_probabilities[most_likely_weather],
+                    'sample_count': total_samples
+                }
+            else:
+                # Veri yoksa boş döndür - fallback yok
+                return {
+                    'avg_temperature': 0.0,
+                    'avg_humidity': 0.0,
+                    'avg_wind_speed': 0.0,
+                    'weather_probabilities': {},
+                    'most_likely_weather': 'veri_yok',
+                    'confidence': 0.0,
+                    'sample_count': 0
+                }
+                
+        except Exception as e:
+            print(f"❌ {city} için tarihsel ortalama hatası: {e}")
+            return {
+                'avg_temperature': 0.0,
+                'avg_humidity': 0.0,
+                'avg_wind_speed': 0.0,
+                'weather_probabilities': {},
+                'most_likely_weather': 'veri_yok',
+                'confidence': 0.0,
+                'sample_count': 0
+            }
+    
+    def _get_rule_based_fallback(self, city: str, month: int, day: int) -> Dict:
+        """Veri yoksa kural tabanlı fallback"""
+        city_data = self.cities_data.get(city.title(), {})
+        if not city_data:
+            return {
+                'avg_temperature': 15.0,
+                'avg_humidity': 60.0,
+                'avg_wind_speed': 10.0,
+                'weather_probabilities': {'güneş': 0.6, 'yağmur': 0.3, 'kar': 0.1},
+                'most_likely_weather': 'güneş',
+                'confidence': 0.6,
+                'sample_count': 0
+            }
         
-        # Enlem etkisi (kuzeye gittikçe soğur)
-        lat_effect = (lat - 40) * -0.5
+        # Basit kural tabanlı tahmin
+        if month in [12, 1, 2]:  # Kış
+            if city_data['climate'] == 'Doğu Anadolu':
+                weather = 'kar'
+                temp = -5.0
+            else:
+                weather = 'yağmur'
+                temp = 5.0
+        elif month in [6, 7, 8]:  # Yaz
+            weather = 'güneş'
+            temp = 25.0
+        else:  # İlkbahar/Sonbahar
+            weather = 'güneş'
+            temp = 15.0
         
-        # Yükseklik etkisi (her 100m için 0.6°C soğur)
-        elevation_effect = elevation * -0.006
-        
-        # İklim etkisi
-        climate_effects = {
-            "Akdeniz": 3, "Ege": 2, "Marmara": 0, "İç Anadolu": -2, 
-            "Karadeniz": 1, "Doğu Anadolu": -5, "Güneydoğu Anadolu": 2
+        return {
+            'avg_temperature': temp,
+            'avg_humidity': 60.0,
+            'avg_wind_speed': 10.0,
+            'weather_probabilities': {weather: 0.8},
+            'most_likely_weather': weather,
+            'confidence': 0.8,
+            'sample_count': 0
         }
-        #İklim etkisi
-        climate_effect = climate_effects.get(climate, 0)
-        #Sıcaklık hesaplama
-        temp = base_temp + lat_effect + elevation_effect + climate_effect
-        
-        # Hava durumu belirleme
-        if climate == "Doğu Anadolu" and month in [12, 1, 2, 3]:
-            weather = "kar"
-        elif climate == "Karadeniz":
-            weather = "yağmur" if np.random.random() > 0.3 else "güneş"
-        elif climate == "Akdeniz" and month in [6, 7, 8, 9]:
-            weather = "güneş"
-        elif temp < 5 and month in [12, 1, 2]:
-            weather = "kar"
-        elif temp > 25 and month in [6, 7, 8]:
-            weather = "güneş"
-        elif month in [6, 7, 8]:  # Yaz ayları
-            weather = "güneş" if np.random.random() > 0.2 else "yağmur"  # %80 güneş, %20 yağmur
-        elif month in [12, 1, 2]:  # Kış ayları
-            weather = "kar" if np.random.random() > 0.3 else "yağmur"  # %70 kar, %30 yağmur
-        else:  # İlkbahar ve sonbahar
-            weather = "yağmur" if np.random.random() > 0.4 else "güneş"  # %60 yağmur, %40 güneş
-        
-        return weather, round(temp, 1)
-    
-    def _predict_traffic_rule_based(self, city: str, day_of_week: int, month: int, population: int) -> float:
-        """Kural tabanlı trafik yoğunluğu tahmini (tatil kontrolü HolidayService'e bırakıldı)"""
-        base_multiplier = 1.0
-        
-        # Nüfus etkisi
-        if population > 5000000:  # 5milyon nüfuslu şehirler
-            base_multiplier *= 1.5
-        elif population > 2000000:  # 2milyon nüfuslu şehirler
-            base_multiplier *= 1.3
-        elif population > 1000000:  # 1milyon nüfuslu şehirler
-            base_multiplier *= 1.2
-        
-        # Hafta sonu etkisi (tatil kontrolü HolidayService'e bırakıldı)
-        if day_of_week >= 5:  # Cumartesi, Pazar
-            if city.lower() in ["antalya", "mersin", "adana", "muğla", "aydın", "izmir"]:
-                base_multiplier *= 1.4  # Turizm şehirleri
-            else:
-                base_multiplier *= 0.7  # Diğer şehirler
-        
-        # Mevsim etkisi
-        if month in [7, 8]:  # Yaz tatili
-            if city.lower() in ["antalya", "mersin", "adana", "muğla", "aydın", "izmir"]:
-                base_multiplier *= 1.6
-            else:
-                base_multiplier *= 0.8
-        
-        return round(base_multiplier, 2)
     
     def load_or_train_models(self):
         """Modelleri yükle veya eğit"""
@@ -303,67 +396,59 @@ class MLWeatherDatabase:
         
         print("✅ Modeller eğitildi ve kaydedildi")
     
-    def get_weather_prediction(self, city: str, month: int) -> Dict:
-        """ML tabanlı hava durumu tahmini (kural tabanlı ile birleştirilmiş)"""
+    def get_weather_prediction(self, city: str, month: int, day: int = None) -> Dict:
+        """Tarihsel veri tabanlı hava durumu tahmini - SADECE GERÇEK VERİ VARSA"""
         city_normalized = city.title()
         if city_normalized not in self.cities_data:
-            return self._get_default_weather(city, month)
+            return {
+                "city": city,
+                "month": month,
+                "predicted_weather": "veri_yok",
+                "confidence": 0.0,
+                "avg_temperature": 0.0,
+                "climate_zone": "Bilinmiyor",
+                "explanation": f"{city} şehri için tarihsel veri bulunamadı"
+            }
+        
+        # Gün belirtilmemişse ayın ortası (15. gün) kullan
+        if day is None:
+            day = 15
+        
+        # Tarihsel ortalama verileri al
+        historical_data = self.get_historical_average(city_normalized, month, day)
+        
+        # Eğer gerçek tarihsel veri yoksa (sample_count = 0), tahmin yapma
+        if historical_data['sample_count'] == 0:
+            return {
+                "city": city,
+                "month": month,
+                "day": day,
+                "predicted_weather": "veri_yok",
+                "confidence": 0.0,
+                "avg_temperature": 0.0,
+                "avg_humidity": 0.0,
+                "avg_wind_speed": 0.0,
+                "climate_zone": self.cities_data[city_normalized]["climate"],
+                "weather_probabilities": {},
+                "sample_count": 0,
+                "explanation": f"{city} şehri için {month}. ayının {day}. gününde son 3 yılda gerçek hava durumu verisi bulunamadı"
+            }
         
         city_data = self.cities_data[city_normalized]
-        
-        # Kural tabanlı tahmin (güvenilir)
-        rule_based_weather, rule_based_temp = self._predict_weather_rule_based(
-            city_data["lat"], city_data["lon"], city_data["elevation"], 
-            city_data["climate"], month, month * 30
-        )
-        
-        # ML tabanlı tahmin
-        features = np.array([[
-            city_data["lat"],
-            city_data["lon"],
-            city_data["elevation"],
-            city_data["population"],
-            month,
-            0,  # Varsayılan gün (Pazartesi)
-            month * 30  # Yaklaşık gün numarası
-        ]])
-        #Özellikleri ölçeklendir
-        features_scaled = self.scaler.transform(features)
-        #Hava durumu modeli
-        weather_encoded = self.weather_model.predict(features_scaled)[0]
-        #Hava durumu kodu
-        ml_weather = self.weather_encoder.inverse_transform([weather_encoded])[0]
-        #Sıcaklık modeli
-        ml_temperature = self.temperature_model.predict(features_scaled)[0]
-        
-        # Öncelik kural tabanlı tahmine ver (özellikle Doğu Anadolu için)
-        if city_data["climate"] == "Doğu Anadolu" and month in [12, 1, 2, 3]:
-            final_weather = rule_based_weather
-            final_temp = rule_based_temp 
-            confidence = 0.95 #Güvenilirlik
-            explanation = f"Kural tabanlı tahmin: {city} şehri {month}. ayında {rule_based_weather} hava durumu bekleniyor (Doğu Anadolu kış koşulları)" 
-        else:
-            # ML ve kural tabanlı tahminleri birleştir
-            if rule_based_weather == ml_weather:
-                final_weather = ml_weather
-                final_temp = (rule_based_temp + ml_temperature) / 2
-                confidence = 0.90
-                explanation = f"ML ve kural tabanlı tahminler uyumlu: {city} şehri {month}. ayında {ml_weather} hava durumu"
-            else:
-                # Çelişki varsa kural tabanlı tahmini tercih et
-                final_weather = rule_based_weather
-                final_temp = rule_based_temp
-                confidence = 0.85
-                explanation = f"Kural tabanlı tahmin tercih edildi: {city} şehri {month}. ayında {rule_based_weather} hava durumu (ML: {ml_weather})"
         
         return {
             "city": city,
             "month": month,
-            "predicted_weather": final_weather,
-            "confidence": confidence,
-            "avg_temperature": round(final_temp, 1),
+            "day": day,
+            "predicted_weather": historical_data['most_likely_weather'],
+            "confidence": historical_data['confidence'],
+            "avg_temperature": round(historical_data['avg_temperature'], 1),
+            "avg_humidity": round(historical_data['avg_humidity'], 1),
+            "avg_wind_speed": round(historical_data['avg_wind_speed'], 1),
             "climate_zone": city_data["climate"],
-            "explanation": explanation
+            "weather_probabilities": historical_data['weather_probabilities'],
+            "sample_count": historical_data['sample_count'],
+            "explanation": f"SON 3 YILIN GERÇEK VERİSİ: {city} şehri {month}. ayının {day}. günü için son {historical_data['sample_count']} yılın gerçek hava durumu ortalaması"
         }
     #Bilinmeyen şehirler için varsayılan tahmin
     def _get_default_weather(self, city: str, month: int) -> Dict:
@@ -388,7 +473,7 @@ class MLWeatherDatabase:
         
         try:
             #Tarih formatını kontrol et
-            date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             city_data = self.cities_data[city_normalized]
             
             # Özellik vektörü
@@ -443,18 +528,128 @@ class MLWeatherDatabase:
             "cost_per_km": round(total_cost / route_distance, 2) if route_distance > 0 else 0
         }
 
+    def collect_all_cities_data(self, start_date: str, end_date: str):
+        """Tüm Türkiye şehirleri için tarihsel veri topla"""
+        print(f"📊 Tüm şehirler için tarihsel veri toplanıyor: {start_date} - {end_date}")
+        
+        total_cities = len(self.cities_data)
+        current = 0
+        
+        for city_name in self.cities_data.keys():
+            current += 1
+            print(f"🔄 [{current}/{total_cities}] {city_name} için veri toplanıyor...")
+            
+            try:
+                self.collect_historical_data(city_name, start_date, end_date)
+                
+                # API limit aşımını önlemek için bekle
+                import time
+                time.sleep(1)
+                
+            except Exception as e:
+                print(f"❌ {city_name} için veri toplama hatası: {e}")
+                continue
+        
+        print("✅ Tüm şehirler için tarihsel veri toplama tamamlandı!")
+    
+    def update_city_statistics(self):
+        """Şehir istatistiklerini güncelle"""
+        print("📈 Şehir istatistikleri güncelleniyor...")
+        
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        for city_name in self.cities_data.keys():
+            print(f"🔄 {city_name} istatistikleri hesaplanıyor...")
+            
+            # Her gün için istatistik hesapla
+            for month in range(1, 13):
+                for day in range(1, 29):  # Her ayın 28 günü
+                    historical_data = self.get_historical_average(city_name, month, day)
+                    
+                    # İstatistikleri veritabanına kaydet
+                    weather_probs_json = json.dumps(historical_data['weather_probabilities'])
+                    
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO city_statistics 
+                        (city, month, day, avg_temperature, avg_humidity, avg_wind_speed, 
+                         weather_probabilities, sample_count)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (city_name, month, day, historical_data['avg_temperature'],
+                          historical_data['avg_humidity'], historical_data['avg_wind_speed'],
+                          weather_probs_json, historical_data['sample_count']))
+        
+        conn.commit()
+        conn.close()
+        print("✅ Şehir istatistikleri güncellendi!")
+    
+    def get_city_statistics(self, city: str, month: int, day: int) -> Dict:
+        """Veritabanından şehir istatistiklerini al"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT avg_temperature, avg_humidity, avg_wind_speed, 
+                       weather_probabilities, sample_count
+                FROM city_statistics 
+                WHERE city = ? AND month = ? AND day = ?
+            ''', (city, month, day))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                weather_probabilities = json.loads(result[3])
+                most_likely_weather = max(weather_probabilities, key=weather_probabilities.get)
+                
+                return {
+                    'avg_temperature': result[0],
+                    'avg_humidity': result[1],
+                    'avg_wind_speed': result[2],
+                    'weather_probabilities': weather_probabilities,
+                    'most_likely_weather': most_likely_weather,
+                    'confidence': weather_probabilities[most_likely_weather],
+                    'sample_count': result[4]
+                }
+            else:
+                # Veritabanında yoksa hesapla
+                return self.get_historical_average(city, month, day)
+                
+        except Exception as e:
+            print(f"❌ {city} istatistik hatası: {e}")
+            return self.get_historical_average(city, month, day)
+
 # Test fonksiyonu
 if __name__ == "__main__":
     db = MLWeatherDatabase()
     
-    print("=== ML Tabanlı Hava Durumu Tahminleri ===")
-    cities = ["İstanbul", "Kars", "Trabzon", "Antalya", "Diyarbakır", "Ankara"]
-    for city in cities:
-        for month in [1, 7]:  # Ocak ve Temmuz
-            pred = db.get_weather_prediction(city, month)
-            print(f"{city} - {month}. ay: {pred['predicted_weather']} ({pred['avg_temperature']}°C, güven: %{pred['confidence']*100:.0f})")
+    print("=== Tarihsel Veri Tabanlı Hava Durumu Tahminleri ===")
     
-    print("\n=== ML Tabanlı Trafik Tahminleri ===")
-    for city in cities:
-        multiplier = db.calculate_traffic_multiplier(city, "2024-07-15", False)
-        print(f"{city} - Trafik çarpanı: {multiplier}") 
+    # Test şehirleri
+    test_cities = ["İstanbul", "Kars", "Trabzon", "Antalya", "Diyarbakır", "Ankara", "Iğdır"]
+    test_dates = [
+        (12, 12),  # Aralık 12 (Kars-Iğdır testi)
+        (7, 15),   # Temmuz 15
+        (1, 1),    # Ocak 1
+        (3, 21)    # Mart 21
+    ]
+    
+    for city in test_cities:
+        print(f"\n🌤️ {city} şehri tahminleri:")
+        for month, day in test_dates:
+            pred = db.get_weather_prediction(city, month, day)
+            print(f"  {month:02d}/{day:02d}: {pred['predicted_weather']} ({pred['avg_temperature']}°C, nem: %{pred['avg_humidity']:.0f}, güven: %{pred['confidence']*100:.0f})")
+            print(f"    Örnek sayısı: {pred['sample_count']}")
+            print(f"    Olasılıklar: {pred['weather_probabilities']}")
+    
+    print("\n=== Veri Toplama Örneği ===")
+    print("Tüm şehirler için veri toplamak için:")
+    print("db.collect_all_cities_data('2021-01-01', '2024-12-31')")
+    print("db.update_city_statistics()")
+    
+    print("\n=== Tek Şehir Testi ===")
+    # Iğdır için özel test
+    igdir_pred = db.get_weather_prediction("Iğdır", 12, 12)
+    print(f"Iğdır - 12 Aralık: {igdir_pred['predicted_weather']} ({igdir_pred['avg_temperature']}°C)")
+    print(f"Güven: %{igdir_pred['confidence']*100:.0f}, Örnek: {igdir_pred['sample_count']}") 

@@ -20,6 +20,7 @@ class AdvancedWeatherPredictor:
             
             # Tarih bilgilerini çıkar
             month = self._extract_month_from_date(date_str)
+            day = self._extract_day_from_date(date_str)
             year = self._extract_year_from_date(date_str)
             season = self._get_season(month)
             
@@ -49,13 +50,22 @@ class AdvancedWeatherPredictor:
                             avg_temperature = 20
                         explanation = f"Kullanıcı isteği: {city} için {predicted_weather} hava durumu"
                     else:
-                        # ML tahmini yap
-                        weather_pred = self.db.predict_weather_for_city_date(city, date_str)
+                        # Tarihsel veri tabanlı tahmin yap
+                        weather_pred = self.db.get_weather_prediction(city, month, day)
                         predicted_weather = weather_pred["predicted_weather"]
                         confidence = weather_pred["confidence"]
-                        avg_temperature = self.db.get_average_temperature(city, month)
-                        explanation = f"{city} için {predicted_weather} hava durumu bekleniyor"
-                        print(f"[ML] ML tahmini kullanılıyor: {city} -> {predicted_weather}")
+                        avg_temperature = weather_pred["avg_temperature"]
+                        explanation = weather_pred["explanation"]
+                        
+                        # Eğer veri yoksa uyarı ver
+                        if predicted_weather == "veri_yok":
+                            print(f"[ML] ⚠️ {city} için gerçek tarihsel veri bulunamadı!")
+                            predicted_weather = "veri_yok"
+                            confidence = 0.0
+                            avg_temperature = 0.0
+                            explanation = f"{city} için son 3 yılda {month}. ayının {day}. gününde gerçek hava durumu verisi yok"
+                        else:
+                            print(f"[ML] Tarihsel veri tahmini kullanılıyor: {city} -> {predicted_weather}")
                     
                     # Hava durumuna göre süre etkisi
                     weather_duration_impact = self._calculate_weather_duration_impact(predicted_weather)
@@ -65,7 +75,7 @@ class AdvancedWeatherPredictor:
                     is_holiday, holiday_name = self._check_holiday_simple(date_str)
                     
                     # Trafik çarpanı hesaplama
-                    traffic_multiplier = self.db.calculate_traffic_multiplier(city, month, is_holiday)
+                    traffic_multiplier = self.db.calculate_traffic_multiplier(city, date_str)
                     
                     # Trafik açıklaması
                     traffic_explanation = self._get_traffic_explanation(city, traffic_multiplier, is_holiday, holiday_name)
@@ -74,11 +84,12 @@ class AdvancedWeatherPredictor:
                         "city": city,
                         "date": date_str,
                         "month": month,
+                        "day": day,
                         "season": season,
                         "predicted_weather": predicted_weather,
                         "confidence": confidence,
                         "avg_temperature": avg_temperature,
-                        "climate_zone": self.db.get_climate_zone(city),
+                        "climate_zone": self.db.cities_data.get(city.title(), {}).get("climate", "Bilinmiyor"),
                         "traffic_multiplier": traffic_multiplier,
                         "weather_duration_impact": weather_duration_impact,
                         "is_holiday": is_holiday,
@@ -97,6 +108,7 @@ class AdvancedWeatherPredictor:
                         "city": city,
                         "date": date_str,
                         "month": month,
+                        "day": day,
                         "season": season,
                         "predicted_weather": "güneş",
                         "confidence": 0.6,
@@ -171,6 +183,33 @@ class AdvancedWeatherPredictor:
         except Exception as e:
             print(f"[DEBUG] Error in _extract_month_from_date: {e}")
             return datetime.now().month
+    
+    def _extract_day_from_date(self, date_str: str) -> int:
+        """Tarih string'inden gün numarasını çıkar"""
+        try:
+            # ISO formatında gün bilgisi yoksa varsayılan olarak 1. gün
+            import re
+            iso_pattern = r'(\d{4})-(\d{1,2})-\d{1,2}'
+            iso_match = re.search(iso_pattern, date_str)
+            if iso_match:
+                day = int(iso_match.group(3))
+                print(f"[DEBUG] ISO format detected: {date_str} -> Day: {day}")
+                return day
+            
+            # Tarih formatında gün bilgisi varsa
+            day_pattern = r'\d{1,2}'
+            match = re.search(day_pattern, date_str)
+            if match:
+                day = int(match.group(0))
+                print(f"[DEBUG] Day format detected: {date_str} -> Day: {day}")
+                return day
+            
+            # Varsayılan olarak 1. gün
+            print(f"[DEBUG] Default day used: {date_str} -> Day: 1")
+            return 1
+        except Exception as e:
+            print(f"[DEBUG] Error in _extract_day_from_date: {e}")
+            return 1
     
     def _extract_year_from_date(self, date_str: str) -> int:
         """Tarih string'inden yıl numarasını çıkar"""
@@ -258,6 +297,7 @@ class AdvancedWeatherPredictor:
                 "city": city,
                 "date": date_str,
                 "month": datetime.now().month,
+                "day": datetime.now().day,
                 "season": self._get_season(datetime.now().month),
                 "predicted_weather": "güneş",
                 "confidence": 0.6,

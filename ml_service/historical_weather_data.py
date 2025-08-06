@@ -25,7 +25,17 @@ import pyodbc
 import urllib.parse
 
 class HistoricalWeatherDataCollector:
-    def __init__(self, api_key: str = "0d97a7dabc935b1c450dbe82a3234617"):
+    def __init__(self, api_key: str = None):
+        if api_key is None:
+            # .env dosyasından API anahtarını al
+            from dotenv import load_dotenv
+            import os
+            load_dotenv()
+            api_key = os.getenv("OPENWEATHER_API_KEY")
+            
+            if not api_key:
+                raise ValueError("OPENWEATHER_API_KEY .env dosyasında bulunamadı!")
+        
         self.api_key = api_key
         self.base_url = "http://api.openweathermap.org/data/2.5/onecall/timemachine"
         self.connection_string = self._get_connection_string()

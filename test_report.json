@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-08-06T09:49:33.841893",
+  "duration_seconds": 38.097883,
+  "total_tests": 9,
+  "successful_tests": 8,
+  "failed_tests": 1,
+  "success_rate": 88.88888888888889,
+  "results": {
+    "Backend Sağlık Kontrolü": {
+      "success": true,
+      "message": "Status: healthy",
+      "details": "",
+      "timestamp": "2025-08-06T09:48:55.775224"
+    },
+    "ML Servisi Sağlık Kontrolü": {
+      "success": true,
+      "message": "Status: healthy",
+      "details": "",
+      "timestamp": "2025-08-06T09:48:57.851886"
+    },
+    "Model Dosyaları Kontrolü": {
+      "success": true,
+      "message": "8 model dosyası mevcut",
+      "details": "",
+      "timestamp": "2025-08-06T09:48:57.853238"
+    },
+    "AI Model Yükleme Testi": {
+      "success": true,
+      "message": "ML servisi çalışıyor (status: healthy, models: False)",
+      "details": "",
+      "timestamp": "2025-08-06T09:48:59.889945"
+    },
+    "Prompt Analizi Testi": {
+      "success": true,
+      "message": "Kaynak: İstanbul, Hedef: Ankara, Hava: ['yağmurlu']",
+      "details": "",
+      "timestamp": "2025-08-06T09:49:00.236955"
+    },
+    "Hava Durumu Tahmini Testi": {
+      "success": true,
+      "message": "2 tahmin yapıldı",
+      "details": "",
+      "timestamp": "2025-08-06T09:49:02.305810"
+    },
+    "Rota Optimizasyonu Testi": {
+      "success": false,
+      "message": "Hata: HTTPConnectionPool(host='localhost', port=5077): Read timed out. (read timeout=30)",
+      "details": "",
+      "timestamp": "2025-08-06T09:49:32.321462"
+    },
+    "Performans Testi": {
+      "success": true,
+      "message": "Yanıt süresi: 1.51 saniye",
+      "details": "",
+      "timestamp": "2025-08-06T09:49:33.832187"
+    },
+    "Hata Yönetimi Testi": {
+      "success": true,
+      "message": "Geçersiz istek düzgün işlendi",
+      "details": "",
+      "timestamp": "2025-08-06T09:49:33.841198"
+    }
+  }
+}
