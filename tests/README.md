@@ -1,111 +1,107 @@
-# 🧪 SmartRouteAI Test Sistemi
+# SmartRouteAI Test System
 
-Bu klasör SmartRouteAI projesinin tüm test dosyalarını içerir.
+This folder contains all test files for the SmartRouteAI project.
 
-## 📁 Dosya Yapısı
+## File Structure
 
 ```
 tests/
-├── README.md              # Bu dosya
-├── run_tests.ps1          # PowerShell test çalıştırıcı
-├── test_system.py         # Ana kapsamlı test sistemi
-├── test_api.py            # API testleri
-├── test_localdb.py        # Veritabanı testleri
-└── test_sql_connection.py # SQL bağlantı testleri
+├── README.md              # This file
+├── simple_test.py         # Simple API test
+└── test_system.py         # Comprehensive test system
 ```
 
-## 🚀 Test Sistemi Nasıl Çalıştırılır
+## How to Run the Test System
 
-### 1. PowerShell ile (Önerilen)
-```powershell
-cd tests
-.\run_tests.ps1
-```
-
-### 2. Python ile
+### 1. Using Python
 ```bash
 cd tests
 python test_system.py
 ```
 
-## 🧪 Test Edilen Bileşenler
+### 2. Simple API Test
+```bash
+cd tests
+python simple_test.py
+```
 
-### ✅ Sistem Sağlık Kontrolleri
-- **Backend Sağlık Kontrolü**: ASP.NET Core API'nin çalışıp çalışmadığını kontrol eder
-- **ML Servisi Sağlık Kontrolü**: Python Flask servisinin durumunu kontrol eder
-- **Model Dosyaları Kontrolü**: Gerekli AI model dosyalarının varlığını kontrol eder
+## Tested Components
 
-### 🤖 AI Model Testleri
-- **AI Model Yükleme Testi**: Modellerin başarıyla yüklenip yüklenmediğini kontrol eder
-- **Hava Durumu Tahmini Testi**: ML tabanlı hava durumu tahminlerini test eder
+### System Health Checks
+- **Backend Health Check**: Verifies if the ASP.NET Core API is running
+- **ML Service Health Check**: Checks the status of Python Flask service
+- **Model Files Check**: Verifies the existence of required AI model files
 
-### 🔄 Fonksiyonel Testler
-- **Prompt Analizi Testi**: Kullanıcı girdilerinin doğru analiz edilip edilmediğini kontrol eder
-- **Rota Optimizasyonu Testi**: Rota hesaplama ve optimizasyon işlemlerini test eder
-- **Performans Testi**: Sistem yanıt sürelerini ölçer
-- **Hata Yönetimi Testi**: Hatalı girdilerin düzgün işlenip işlenmediğini kontrol eder
+### AI Model Tests
+- **AI Model Loading Test**: Checks if models are loaded successfully
+- **Weather Prediction Test**: Tests ML-based weather predictions
 
-## 📊 Test Raporu
+### Functional Tests
+- **Prompt Analysis Test**: Verifies correct analysis of user inputs
+- **Route Optimization Test**: Tests route calculation and optimization processes
+- **Performance Test**: Measures system response times
+- **Error Handling Test**: Checks if error inputs are handled properly
 
-Test sistemi çalıştırıldıktan sonra ana dizinde `test_report.json` dosyası oluşturulur. Bu dosya şunları içerir:
+## Test Report
 
-- Test sonuçları ve başarı oranları
-- Hata detayları
-- Performans metrikleri
-- Zaman damgaları
+After running the test system, a `test_report.json` file is created in the main directory. This file contains:
 
-## 🔧 Gereksinimler
+- Test results and success rates
+- Error details
+- Performance metrics
+- Timestamps
 
-### Sistem Gereksinimleri
+## Requirements
+
+### System Requirements
 - Python 3.8+
-- PowerShell 5.0+
-- Backend çalışıyor olmalı (http://localhost:5077)
-- ML servisi çalışıyor olmalı (http://localhost:5001)
+- Backend must be running (http://localhost:5077)
+- ML service must be running (http://localhost:5001)
 
-### Python Paketleri
+### Python Packages
 ```bash
 pip install requests
 ```
 
-## 🚨 Sorun Giderme
+## Troubleshooting
 
-### Backend Çalışmıyor
+### Backend Not Running
 ```bash
 cd backend/SmartRouteAI.Backend
 dotnet run
 ```
 
-### ML Servisi Çalışmıyor
+### ML Service Not Running
 ```bash
 cd ml_service
-python start_ai_service.py
+python ai_service.py
 ```
 
-### Model Dosyaları Eksik
+### Missing Model Files
 ```bash
 cd ml_service
 python train_ai_models.py
 ```
 
-## 📈 Test Sonuçları
+## Test Results
 
-Test sistemi %80 başarı oranına ulaştığında başarılı kabul edilir. Başarısız testler için:
+The test system is considered successful when it reaches 80% success rate. For failed tests:
 
-1. `test_report.json` dosyasını kontrol edin
-2. Hata mesajlarını inceleyin
-3. Gerekli servislerin çalıştığından emin olun
-4. Model dosyalarının mevcut olduğunu kontrol edin
+1. Check the `test_report.json` file
+2. Review error messages
+3. Ensure required services are running
+4. Verify model files are present
 
-## 🔄 Sürekli Test
+## Continuous Testing
 
-Geliştirme sırasında testleri sürekli çalıştırmak için:
+To run tests continuously during development:
 
-```powershell
+```bash
 # Windows
-while ($true) { .\run_tests.ps1; Start-Sleep 300 }
+while ($true) { python test_system.py; Start-Sleep 300 }
 
 # Linux/Mac
 while true; do python test_system.py; sleep 300; done
 ```
 
-Bu komut testleri her 5 dakikada bir çalıştırır. 
+This command runs tests every 5 minutes. 

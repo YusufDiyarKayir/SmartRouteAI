@@ -1,191 +1,201 @@
-# 🚀 SmartRouteAI - Akıllı Rota Planlama Sistemi
+# SmartRouteAI - Intelligent Route Planning System
 
-## 📋 Proje Özeti
+## Project Overview
 
-SmartRouteAI, yapay zeka destekli gelişmiş bir rota planlama sistemidir. Kullanıcıların doğal dil ile rota isteklerini yapabilmelerini sağlar ve hava durumu, trafik, tatil günleri gibi faktörleri dikkate alarak optimize edilmiş rotalar sunar.
+SmartRouteAI is an AI-powered advanced route planning system. It allows users to make route requests using natural language and provides optimized routes considering factors such as weather, traffic, and holidays.
 
-## ✨ Özellikler
+## Features
 
-### 🤖 AI Destekli Özellikler
-- **Doğal Dil İşleme (NLP)**: Kullanıcılar "İstanbul'dan Ankara'ya git" gibi doğal cümlelerle rota isteyebilir
-- **Akıllı Prompt Analizi**: Azure Text Analytics ile gelişmiş metin analizi
-- **Anlamsız Prompt Tespiti**: Geçersiz istekleri otomatik olarak tespit eder
-- **ML Tabanlı Hava Durumu Analizi**: LSTM + Transformer modelleri ile hava durumu tahmini
-- **Rota Optimizasyonu**: AI destekli rota optimizasyon algoritmaları
+### AI-Powered Features
+- **Natural Language Processing (NLP)**: Users can request routes using natural sentences like "Go from Istanbul to Ankara"
+- **Smart Prompt Analysis**: Advanced text analysis with Azure Text Analytics
+- **Invalid Prompt Detection**: Automatically detects invalid requests
+- **ML-Based Weather Analysis**: Weather prediction using LSTM + Transformer models
+- **Route Optimization**: AI-powered route optimization algorithms
 
-### 🗺️ Harita ve Rota Özellikleri
-- **Google Maps Entegrasyonu**: Gerçek zamanlı harita görüntüleme
-- **Alternatif Rotalar**: Birden fazla rota seçeneği sunma
-- **Gerçek Zamanlı Trafik**: Trafik durumuna göre rota güncelleme
-- **Ücretli Yol Tespiti**: Otoyol ve köprü ücretlerini hesaplama
-- **Varış Zamanı Hesaplama**: Trafik ve hava durumuna göre varış tahmini
+### Map and Route Features
+- **Google Maps Integration**: Real-time map viewing
+- **Alternative Routes**: Multiple route options
+- **Real-Time Traffic**: Route updates based on traffic conditions
+- **Toll Road Detection**: Calculation of highway and bridge tolls
+- **Arrival Time Calculation**: Arrival estimation based on traffic and weather
 
-### 🌤️ Hava Durumu Entegrasyonu
-- **OpenWeatherMap API**: Gerçek zamanlı hava durumu verileri
-- **Hava Durumu Etkisi**: Yağmur, kar, sis gibi durumların rota süresine etkisi
-- **5 Günlük Tahmin**: Gelecek tarihli hava durumu analizi
-- **Hava Durumu Sınıflandırması**: Otomatik hava durumu kategorilendirme
+### Weather Integration
+- **OpenWeatherMap API**: Real-time weather data
+- **Weather Impact**: Effect of rain, snow, fog on route duration
+- **Unlimited Future Forecast**: Unlimited future weather prediction capabilities
+- **Weather Classification**: Automatic weather categorization
 
-### 📅 Tatil ve Zaman Yönetimi
-- **Abstract API Entegrasyonu**: Türkiye tatil günleri kontrolü
-- **Tatil Etkisi Hesaplama**: Tatil günlerinde trafik yoğunluğu analizi
-- **Hafta Sonu Optimizasyonu**: Hafta sonu trafik durumuna göre rota ayarlama
-- **Zaman Bazlı Rota**: Belirli saat ve tarihler için optimize edilmiş rotalar
+### Holiday and Time Management
+- **Abstract API Integration**: Turkey holiday day checking
+- **Holiday Impact Calculation**: Traffic density analysis on holidays
+- **Weekend Optimization**: Route adjustment based on weekend traffic
+- **Time-Based Routing**: Optimized routes for specific times and dates
 
-### 🎯 Kullanıcı Deneyimi
-- **Modern Web Arayüzü**: Responsive ve kullanıcı dostu tasarım
-- **Gerçek Zamanlı Güncelleme**: Anlık rota ve hava durumu güncellemeleri
-- **Hata Yönetimi**: Kapsamlı hata yakalama ve kullanıcı bilgilendirme
-- **Çoklu Dil Desteği**: Türkçe arayüz ve mesajlar
+### User Experience
+- **Modern Web Interface**: Responsive and user-friendly design
+- **Real-Time Updates**: Instant route and weather updates
+- **Error Handling**: Comprehensive error catching and user notification
+- **Multi-Language Support**: Turkish interface and messages
 
-## 🏗️ Teknik Mimari
+## Technical Architecture
 
 ### Backend (ASP.NET Core 8.0)
 ```
 backend/SmartRouteAI.Backend/
 ├── Controllers/
-│   └── RouteController.cs          # API endpoint'leri
+│   └── RouteController.cs          # API endpoints
 ├── Services/
-│   ├── PromptAnalysisService.cs    # NLP işlemleri
-│   ├── RouteOptimizationService.cs # Rota optimizasyonu
-│   ├── MapService.cs              # Harita işlemleri
-│   ├── AdvancedWeatherService.cs  # Hava durumu analizi
-│   ├── HolidayService.cs          # Tatil kontrolü
-│   └── AIModelService.cs          # AI model entegrasyonu
+│   ├── PromptAnalysisService.cs    # NLP operations
+│   ├── RouteOptimizationService.cs # Route optimization
+│   ├── MapService.cs              # Map operations
+│   ├── AdvancedWeatherService.cs  # Weather analysis
+│   ├── HolidayService.cs          # Holiday checking
+│   └── AIModelService.cs          # AI model integration
 ├── wwwroot/
-│   └── index.html                 # Frontend dosyası
-└── Program.cs                     # Uygulama konfigürasyonu
+│   └── index.html                 # Frontend file
+└── Program.cs                     # Application configuration
 ```
 
 ### Frontend (HTML/JavaScript/Leaflet.js)
 ```
 frontend/
-└── index.html                     # Ana kullanıcı arayüzü
+└── index.html                     # Main user interface
 ```
 
-### Python AI Servisleri
+### Python AI Services
 ```
 backend/
-├── train_ai_models.py             # AI model eğitimi
-├── weather_ml_service.py          # Hava durumu ML servisi
-└── requirements.txt               # Python bağımlılıkları
+├── train_ai_models.py             # AI model training
+├── weather_ml_service.py          # Weather ML service
+└── requirements.txt               # Python dependencies
 ```
 
-## 🚀 Kurulum ve Çalıştırma
+## Installation and Setup
 
-### Gereksinimler
+### Requirements
 - .NET 8.0 SDK
 - Python 3.8+
 - Git
 
-### API Anahtarları Kurulumu
+### API Key Setup
 
-1. **OpenWeatherMap API Anahtarı:**
-   - [OpenWeatherMap](https://openweathermap.org/api) sitesine gidin
-   - Ücretsiz hesap oluşturun
-   - API anahtarınızı alın
+1. **OpenWeatherMap API Key (Required):**
+   - Go to [OpenWeatherMap](https://openweathermap.org/api)
+   - Create a free account
+   - Get your API key
+   - Used for real-time weather data and forecasts
 
-2. **Google Maps API Anahtarı (Opsiyonel):**
-   - [Google Cloud Console](https://console.cloud.google.com/) sitesine gidin
-   - Maps JavaScript API'yi etkinleştirin
-   - API anahtarınızı alın
+2. **Google Maps API Key (Required):**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Enable Maps JavaScript API and Directions API
+   - Get your API key
+   - Used for route calculation and map integration
 
-3. **Holiday API Anahtarı (Opsiyonel):**
-   - [Abstract API](https://www.abstractapi.com/holidays-api) sitesine gidin
-   - Ücretsiz hesap oluşturun
-   - API anahtarınızı alın
+3. **Abstract API Holiday Key (Optional):**
+   - Go to [Abstract API](https://www.abstractapi.com/holidays-api)
+   - Create a free account
+   - Get your API key
+   - Used for Turkey holiday day checking
 
-### Adımlar
+4. **Azure Cognitive Services API Key (Optional):**
+   - Go to [Azure Portal](https://portal.azure.com/)
+   - Create a Cognitive Services resource
+   - Get your API key
+   - Used for advanced text analysis and NLP features
 
-1. **Projeyi klonlayın:**
+### Steps
+
+1. **Clone the project:**
 ```bash
 git clone https://github.com/YusufDiyarKayir/SmartRouteAI.git
 cd SmartRouteAI
 ```
 
-2. **Environment dosyasını oluşturun:**
+2. **Create environment file:**
 ```bash
-# env.example dosyasını .env olarak kopyalayın
+# Copy env.example to .env
 cp env.example .env
 
-# .env dosyasını düzenleyin ve API anahtarlarınızı ekleyin
-# Örnek:
-# OPENWEATHER_API_KEY="your_api_key_here"
-# GOOGLE_MAPS_API_KEY="your_google_maps_key_here"
-# HOLIDAY_API_KEY="your_holiday_api_key_here"
+# Edit .env file and add your API keys
+# Example:
+# OPENWEATHER_API_KEY="your_openweather_api_key_here"
+# GOOGLE_MAPS_API_KEY="your_google_maps_api_key_here"
+# HOLIDAY_API_KEY="your_abstract_api_key_here"
+# AZURE_COGNITIVE_API_KEY="your_azure_cognitive_api_key_here"
 ```
 
-3. **Python bağımlılıklarını yükleyin:**
+3. **Install Python dependencies:**
 ```bash
 cd ml_service
 pip install -r requirements.txt
 ```
 
-4. **Projeyi başlatın:**
+4. **Start the project:**
 ```bash
 cd ..
 .\projeyi_baslat.ps1
 ```
 
-4. **Tarayıcıda açın:**
+4. **Open in browser:**
 ```
 http://localhost:5077
 ```
 
-## 📊 API Endpoint'leri
+## API Endpoints
 
-### Ana Endpoint'ler
-- `POST /api/Route/analyze-prompt` - Prompt analizi
-- `POST /api/Route/plan` - Rota planlama
-- `GET /api/Route/health` - Servis durumu
+### Main Endpoints
+- `POST /api/Route/analyze-prompt` - Prompt analysis
+- `POST /api/Route/plan` - Route planning
+- `GET /api/Route/health` - Service status
 
-### Hava Durumu
-- `GET /weatherforecast` - Hava durumu tahmini
+### Weather
+- `GET /weatherforecast` - Weather forecast
 
-### Rota Hesaplama
-- `POST /route` - Koordinat bazlı rota hesaplama
+### Route Calculation
+- `POST /route` - Coordinate-based route calculation
 
-## 🔧 Konfigürasyon
+## Configuration
 
-### API Anahtarları
-Projeyi çalıştırmak için aşağıdaki API anahtarları gereklidir:
+### API Keys
+The following API keys are required to run the project:
 
 ```json
 {
-  "GoogleMaps": "",
-  "OpenWeatherMap": "",
-  "AbstractAPI": "",
-  "AzureTextAnalytics": ""
+  "OpenWeatherMap": "your_openweather_api_key",
+  "GoogleMaps": "your_google_maps_api_key",
+  "AbstractAPI": "your_abstract_api_key",
+  "AzureCognitive": "your_azure_cognitive_api_key"
 }
 ```
 
-## 📈 Performans Özellikleri
+**Note:** OpenWeatherMap and Google Maps API keys are required for basic functionality. Abstract API and Azure Cognitive Services keys are optional but enable additional features.
 
-- **Hızlı Yanıt**: Ortalama 2-3 saniye rota hesaplama süresi
-- **Yüksek Doğruluk**: %95+ hava durumu tahmin doğruluğu
-- **Ölçeklenebilir**: Mikroservis mimarisi ile kolay ölçeklendirme
-- **Cache Sistemi**: 5 dakikalık önbellek ile hızlı erişim
+## Performance Features
 
+- **Fast Response**: Average 2-3 seconds route calculation time
+- **High Accuracy**: 95%+ weather prediction accuracy
+- **Scalable**: Easy scaling with microservice architecture
+- **Cache System**: Fast access with 5-minute cache
 
-### Test Etme
+### Testing
 ```bash
-# Backend testleri
+# Backend tests
 dotnet test
 
-# Python servisleri test
+# Python services test
 python -m pytest tests/
 ```
 
-## 📄 Lisans
+## License
 
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-## 👨‍💻 Geliştirici
-**Yusuf Diyar Kayır**
+## Developer
+**Yusuf Diyar Kayir**
 - GitHub: [@YusufDiyarKayir](https://github.com/YusufDiyarKayir)
 - Instagram: [@YusufDiyarKayir](https://www.instagram.com/yusufdkayir/)
-- LinkedIn: [Yusuf Diyar Kayır](https://linkedin.com/in/yusufdiyarkayir)
+- LinkedIn: [Yusuf Diyar Kayir](https://linkedin.com/in/yusufdiyarkayir)
 
-
-**Son Güncelleme:** 15 Ocak 2024
-**Durum:** ✅ Aktif Geliştirme 
+**Last Update:** August 6, 2025
+**Status:** Active Development 
