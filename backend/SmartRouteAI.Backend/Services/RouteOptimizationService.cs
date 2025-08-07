@@ -201,8 +201,40 @@ namespace Services
                 Console.WriteLine($"[TIME] Travel time: {travelTime}");
             }
             
+            // Google Maps API için departure_time hesapla
+            var departureTime = "now"; // Varsayılan olarak şu an
+            
+            if (!string.IsNullOrEmpty(travelDate))
+            {
+                try
+                {
+                    var travelDateTime = DateTime.Parse(travelDate);
+                    
+                    // Eğer saat bilgisi varsa, tarihe ekle
+                    if (!string.IsNullOrEmpty(travelTime))
+                    {
+                        var timeParts = travelTime.Split(':');
+                        if (timeParts.Length == 2 && int.TryParse(timeParts[0], out int hour) && int.TryParse(timeParts[1], out int minute))
+                        {
+                            travelDateTime = travelDateTime.Date.AddHours(hour).AddMinutes(minute);
+                        }
+                    }
+                    
+                    // Unix timestamp'e çevir (saniye cinsinden)
+                    var unixTimestamp = ((DateTimeOffset)travelDateTime).ToUnixTimeSeconds();
+                    departureTime = unixTimestamp.ToString();
+                    
+                    Console.WriteLine($"[GOOGLE API] Using departure time: {travelDateTime:yyyy-MM-dd HH:mm} (Unix: {unixTimestamp})");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[GOOGLE API] Error parsing departure time: {ex.Message}");
+                    departureTime = "now";
+                }
+            }
+            
             var avoidStr = avoidParams.Any() ? $"&avoid={string.Join("|", avoidParams)}" : "&avoid=ferries";
-            var url = $"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}{waypointsStr}&alternatives=true{avoidStr}&mode=driving&traffic_model=best_guess&departure_time=now&key={_googleApiKey}";
+            var url = $"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={dest}{waypointsStr}&alternatives=true{avoidStr}&mode=driving&traffic_model=best_guess&departure_time={departureTime}&key={_googleApiKey}";
             Console.WriteLine($"[GOOGLE API] Request URL: {url}");
             var client = _httpClientFactory.CreateClient();
             var response = await client.GetAsync(url);
@@ -282,6 +314,28 @@ namespace Services
                         result.DistanceKm = Math.Round(totalDistance / 1000.0, 2);
                         result.DurationMin = Math.Round(totalDuration / 60.0, 1);
                         
+                        // Google Maps'ten gelen trafik verilerini al
+                        var googleTrafficMultiplier = 1.0;
+                        var googleTrafficImpact = new List<string>();
+                        
+                        // Google Maps'ten duration_in_traffic bilgisini al (ilk leg'den)
+                        if (legsElem.GetArrayLength() > 0)
+                        {
+                            var firstLeg = legsElem[0];
+                            if (firstLeg.TryGetProperty("duration_in_traffic", out var trafficDurationElem))
+                            {
+                                var trafficDuration = trafficDurationElem.GetProperty("value").GetDouble();
+                                var normalDuration = firstLeg.GetProperty("duration").GetProperty("value").GetDouble();
+                                
+                                if (normalDuration > 0)
+                                {
+                                    googleTrafficMultiplier = trafficDuration / normalDuration;
+                                    googleTrafficImpact.Add($"Google Maps trafik verisi: {googleTrafficMultiplier:F2}x");
+                                    Console.WriteLine($"[GOOGLE TRAFFIC] Traffic multiplier: {googleTrafficMultiplier:F2}x (Normal: {normalDuration/60:F1}min, Traffic: {trafficDuration/60:F1}min)");
+                                }
+                            }
+                        }
+                        
                         // ML tabanlı hava koşullarına göre süre ayarlaması
                         result.AdjustedDurationMin = result.DurationMin;
                         
@@ -290,76 +344,111 @@ namespace Services
                         var holidayImpact = new List<string>();
                         var aiOptimization = false;
                         
-                        if (!string.IsNullOrEmpty(travelDate))
+                        // Google Maps trafik verilerini kullan (öncelikli)
+                        if (googleTrafficMultiplier > 1.0)
                         {
+                            holidayMultiplier = googleTrafficMultiplier;
+                            holidayImpact.AddRange(googleTrafficImpact);
+                            Console.WriteLine($"[TRAFFIC] Using Google Maps traffic data: {googleTrafficMultiplier:F2}x");
+                        }
+                        else
+                        {
+                            // Google Maps trafik verisi yoksa fallback hesaplamaları kullan
+                            Console.WriteLine("[TRAFFIC] No Google Maps traffic data, using fallback calculations");
+                            
+                            // Tarih belirtilmediğinde şu anın tarih ve saatini kullan
+                            var travelDateTime = !string.IsNullOrEmpty(travelDate) ? DateTime.Parse(travelDate) : DateTime.Now;
+                            
+                            // Eğer saat bilgisi varsa, tarihe ekle
+                            if (!string.IsNullOrEmpty(travelTime))
+                            {
+                                var timeParts = travelTime.Split(':');
+                                if (timeParts.Length == 2 && int.TryParse(timeParts[0], out int hour) && int.TryParse(timeParts[1], out int minute))
+                                {
+                                    travelDateTime = travelDateTime.Date.AddHours(hour).AddMinutes(minute);
+                                }
+                            }
+                            
+                            Console.WriteLine($"[TRAFFIC] Using travel date/time: {travelDateTime:yyyy-MM-dd HH:mm}");
+                            
+                            try
+                        {
+                            // Tatil kontrolü
+                            var holiday = _holidayService.CheckHoliday(travelDateTime);
+                            var trafficMultiplier = _holidayService.GetTrafficMultiplier(travelDateTime);
+                            
+                            if (holiday != null)
+                            {
+                                holidayMultiplier = trafficMultiplier;
+                                holidayImpact.Add($"{holiday.Name} nedeniyle trafik yoğunluğu {trafficMultiplier:F1}x");
+                                result.IsHoliday = true;
+                                result.HolidayName = holiday.Name;
+                                result.HolidayTrafficMultiplier = trafficMultiplier;
+                                Console.WriteLine($"[HOLIDAY] {holiday.Name} - Traffic multiplier: {trafficMultiplier:F1}x");
+                            }
+                            else if (travelDateTime.DayOfWeek == DayOfWeek.Saturday || travelDateTime.DayOfWeek == DayOfWeek.Sunday)
+                            {
+                                holidayMultiplier = 1.3; // Hafta sonu
+                                holidayImpact.Add("Hafta sonu nedeniyle trafik yoğunluğu 1.3x");
+                                result.IsHoliday = true;
+                                result.HolidayName = "Hafta Sonu";
+                                result.HolidayTrafficMultiplier = 1.3;
+                                Console.WriteLine("[HOLIDAY] Weekend - Traffic multiplier: 1.3x");
+                            }
+                            else
+                            {
+                                // Sadece gece saatleri için basit hesaplama (Google Maps verisi yoksa)
+                                var hour = travelDateTime.Hour;
+                                if (hour >= 22 || hour <= 6)
+                                {
+                                    holidayMultiplier = 0.7; // Gece saatleri
+                                    holidayImpact.Add($"Gece saatleri ({hour}:00) nedeniyle trafik yoğunluğu 0.7x");
+                                    result.HolidayTrafficMultiplier = 0.7;
+                                    Console.WriteLine($"[TRAFFIC] Night hours ({hour}:00) - Traffic multiplier: 0.7x");
+                                }
+                            }
+                            
+                            // AI trafik tahmini
                             try
                             {
-                                var travelDateTime = DateTime.Parse(travelDate);
+                                var routeInfo = new RouteInfo
+                                {
+                                    Distance = result.DistanceKm,
+                                    CityPopulation = 1500000, // İstanbul için
+                                    RoadQuality = 0.8,
+                                    HighwayRatio = 0.3,
+                                    Hour = travelDateTime.Hour,
+                                    DayOfWeek = (int)travelDateTime.DayOfWeek,
+                                    IsHoliday = holiday != null
+                                };
                                 
-                                // Tatil kontrolü
-                                var holiday = _holidayService.CheckHoliday(travelDateTime);
-                                var trafficMultiplier = _holidayService.GetTrafficMultiplier(travelDateTime);
+                                var weatherData = new WeatherData
+                                {
+                                    Condition = weatherConditions?.FirstOrDefault() ?? "güneşli",
+                                    Temperature = 20,
+                                    Humidity = 50,
+                                    WindSpeed = 10
+                                };
                                 
-                                if (holiday != null)
-                                {
-                                    holidayMultiplier = trafficMultiplier;
-                                    holidayImpact.Add($"{holiday.Name} nedeniyle trafik yoğunluğu {trafficMultiplier:F1}x");
-                                    result.IsHoliday = true;
-                                    result.HolidayName = holiday.Name;
-                                    result.HolidayTrafficMultiplier = trafficMultiplier;
-                                    Console.WriteLine($"[HOLIDAY] {holiday.Name} - Traffic multiplier: {trafficMultiplier:F1}x");
-                                }
-                                else if (travelDateTime.DayOfWeek == DayOfWeek.Saturday || travelDateTime.DayOfWeek == DayOfWeek.Sunday)
-                                {
-                                    holidayMultiplier = 1.3; // Hafta sonu
-                                    holidayImpact.Add("Hafta sonu nedeniyle trafik yoğunluğu 1.3x");
-                                    result.IsHoliday = true;
-                                    result.HolidayName = "Hafta Sonu";
-                                    result.HolidayTrafficMultiplier = 1.3;
-                                    Console.WriteLine("[HOLIDAY] Weekend - Traffic multiplier: 1.3x");
-                                }
+                                var aiTrafficPrediction = await _aiModelService.PredictTrafficAsync(routeInfo, weatherData, travelDateTime);
                                 
-                                // AI trafik tahmini
-                                try
+                                if (aiTrafficPrediction.ModelUsed == "AI_LSTM")
                                 {
-                                    var routeInfo = new RouteInfo
-                                    {
-                                        Distance = result.DistanceKm,
-                                        CityPopulation = 1500000, // İstanbul için
-                                        RoadQuality = 0.8,
-                                        HighwayRatio = 0.3,
-                                        Hour = travelDateTime.Hour,
-                                        DayOfWeek = (int)travelDateTime.DayOfWeek,
-                                        IsHoliday = holiday != null
-                                    };
-                                    
-                                    var weatherData = new WeatherData
-                                    {
-                                        Condition = weatherConditions?.FirstOrDefault() ?? "güneşli",
-                                        Temperature = 20,
-                                        Humidity = 50,
-                                        WindSpeed = 10
-                                    };
-                                    
-                                    var aiTrafficPrediction = await _aiModelService.PredictTrafficAsync(routeInfo, weatherData, travelDateTime);
-                                    
-                                    if (aiTrafficPrediction.ModelUsed == "AI_LSTM")
-                                    {
-                                        holidayMultiplier = aiTrafficPrediction.TrafficMultiplier;
-                                        holidayImpact.Add($"AI tahmini: Trafik yoğunluğu {aiTrafficPrediction.TrafficMultiplier:F2}x (Güven: {aiTrafficPrediction.Confidence:F2})");
-                                        aiOptimization = true;
-                                        Console.WriteLine($"[AI] Traffic prediction: {aiTrafficPrediction.TrafficMultiplier:F2}x (Confidence: {aiTrafficPrediction.Confidence:F2})");
-                                    }
-                                }
-                                catch (Exception aiEx)
-                                {
-                                    Console.WriteLine($"[AI] Traffic prediction error: {aiEx.Message}");
+                                    holidayMultiplier = aiTrafficPrediction.TrafficMultiplier;
+                                    holidayImpact.Add($"AI tahmini: Trafik yoğunluğu {aiTrafficPrediction.TrafficMultiplier:F2}x (Güven: {aiTrafficPrediction.Confidence:F2})");
+                                    aiOptimization = true;
+                                    Console.WriteLine($"[AI] Traffic prediction: {aiTrafficPrediction.TrafficMultiplier:F2}x (Confidence: {aiTrafficPrediction.Confidence:F2})");
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception aiEx)
                             {
-                                Console.WriteLine($"[HOLIDAY] Error parsing date: {ex.Message}");
+                                Console.WriteLine($"[AI] Traffic prediction error: {aiEx.Message}");
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[TRAFFIC] Error in traffic calculation: {ex.Message}");
+                        }
                         }
                         Console.WriteLine($"[ROUTE OPTIMIZATION] Weather conditions received: {weatherConditions?.Count ?? 0}");
                         Console.WriteLine($"[ROUTE OPTIMIZATION] Weather conditions content: [{string.Join("|", weatherConditions ?? new List<string>())}]");

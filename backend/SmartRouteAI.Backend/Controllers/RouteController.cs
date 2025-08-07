@@ -113,15 +113,22 @@ namespace SmartRouteAI.Backend.Controllers
                 Console.WriteLine($"[CONTROLLER] Analysis.TravelDate: '{analysis.TravelDate}'");
                 Console.WriteLine($"[CONTROLLER] Analysis.Route.Count: {analysis.Route.Count}");
                 Console.WriteLine($"[CONTROLLER] Analysis.Route: [{string.Join(", ", analysis.Route)}]");
+                Console.WriteLine($"[CONTROLLER] Analysis.WeatherConditions: [{string.Join(", ", analysis.WeatherConditions)}]");
                 
-                if (!string.IsNullOrEmpty(analysis.TravelDate) && analysis.Route.Count > 0)
+                // Hava durumu koşulları varsa veya rota bilgisi varsa ML servisini çağır
+                if ((analysis.WeatherConditions.Any() || !string.IsNullOrEmpty(analysis.TravelDate)) && analysis.Route.Count > 0)
                 {
                     try
                     {
-                        Console.WriteLine($"[CONTROLLER] ML Service çağrılıyor - Route: {string.Join(", ", analysis.Route)}, Date: {analysis.TravelDate}");
+                        // Tarih belirtilmediğinde bugünün tarihini ve şu anın saatini kullan
+                        var now = DateTime.Now;
+                        var travelDate = !string.IsNullOrEmpty(analysis.TravelDate) ? analysis.TravelDate : now.ToString("yyyy-MM-dd");
+                        var travelTime = !string.IsNullOrEmpty(analysis.TravelTime) ? analysis.TravelTime : now.ToString("HH:mm");
+                        
+                        Console.WriteLine($"[CONTROLLER] ML Service çağrılıyor - Route: {string.Join(", ", analysis.Route)}, Date: {travelDate}, Time: {travelTime}");
                         
                         // ML servisinden hava durumu tahmini al
-                        var mlPredictions = await _advancedWeatherService.GetAdvancedWeatherPredictionsAsync(analysis.Route, analysis.TravelDate, analysis.WeatherConditions);
+                        var mlPredictions = await _advancedWeatherService.GetAdvancedWeatherPredictionsAsync(analysis.Route, travelDate, analysis.WeatherConditions);
                         
                         Console.WriteLine($"[CONTROLLER] ML Service yanıtı alındı - Predictions count: {mlPredictions?.Predictions?.Count ?? 0}");
                         
@@ -176,7 +183,7 @@ namespace SmartRouteAI.Backend.Controllers
                             Console.WriteLine($"[CONTROLLER] Weather conditions content: [{string.Join("|", weatherConditions)}]");
                             
                             // Rota önerileri
-                            var recommendations = await _advancedWeatherService.GetRouteRecommendationsAsync(analysis.Route, analysis.TravelDate);
+                            var recommendations = await _advancedWeatherService.GetRouteRecommendationsAsync(analysis.Route, travelDate);
                             routeRecommendations = recommendations.RouteRecommendations.Select(r => new {
                                 type = r.Type,
                                 priority = r.Priority,
@@ -205,7 +212,7 @@ namespace SmartRouteAI.Backend.Controllers
                 }
                 else
                 {
-                    Console.WriteLine($"[CONTROLLER] ML Service çağrılmadı - TravelDate: {analysis.TravelDate}, Route count: {analysis.Route.Count}");
+                    Console.WriteLine($"[CONTROLLER] ML Service çağrılmadı - TravelDate: {analysis.TravelDate}, WeatherConditions: [{string.Join(", ", analysis.WeatherConditions)}], Route count: {analysis.Route.Count}");
                 }
                 
                 // ML tahminlerini kullanarak rota optimizasyonu yap

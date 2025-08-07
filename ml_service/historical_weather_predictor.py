@@ -28,6 +28,9 @@ from sklearn.metrics import accuracy_score, classification_report
 import warnings
 warnings.filterwarnings('ignore')
 
+app = Flask(__name__)
+CORS(app)
+
 class HistoricalWeatherPredictor:
     def __init__(self):
         self.collector = HistoricalWeatherDataCollector()

@@ -143,34 +143,63 @@ namespace Services
             {
                 _logger.LogInformation($"[RECOMMENDATIONS] Rota önerileri isteniyor: {string.Join(", ", cities)} - {date}");
 
-                var requestData = new
-                {
-                    cities = cities,
-                    date = date,
-                    preferences = preferences ?? new Dictionary<string, object>()
-                };
-
-                var json = JsonSerializer.Serialize(requestData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync($"{_mlServiceUrl}/route_recommendations", content);
+                // Python ML servisinde /route_recommendations endpoint'i yok, 
+                // bu yüzden basit bir fallback response döndürüyoruz
+                var recommendations = new List<RouteRecommendation>();
                 
-                if (response.IsSuccessStatusCode)
+                // Hava durumu tahmini al
+                var weatherResponse = await GetAdvancedWeatherPredictionsAsync(cities, date);
+                
+                if (weatherResponse?.Predictions?.Any() == true)
                 {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<RouteRecommendationsResponse>(responseContent, new JsonSerializerOptions
+                    var weatherConditions = weatherResponse.Predictions.Select(p => p.PredictedWeather).Distinct().ToList();
+                    
+                    // Hava koşullarına göre öneriler
+                    if (weatherConditions.Any(w => w.Contains("kar") || w.Contains("karlı")))
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        recommendations.Add(new RouteRecommendation
+                        {
+                            Type = "weather",
+                            Priority = "high",
+                            Message = "Karlı hava bekleniyor - Dağlık yolları tercih etmeyin",
+                            Impact = "duration_increase"
+                        });
+                    }
+                    
+                    if (weatherConditions.Any(w => w.Contains("yağmur") || w.Contains("yağmurlu")))
+                    {
+                        recommendations.Add(new RouteRecommendation
+                        {
+                            Type = "weather",
+                            Priority = "medium",
+                            Message = "Yağmurlu hava bekleniyor - Ana yolları tercih edin",
+                            Impact = "safety_improvement"
+                        });
+                    }
+                    
+                    // Tatil dönemi önerileri
+                    if (weatherResponse.RouteSummary.IsHolidayPeriod)
+                    {
+                        recommendations.Add(new RouteRecommendation
+                        {
+                            Type = "holiday",
+                            Priority = "high",
+                            Message = $"{weatherResponse.RouteSummary.HolidayName} dönemi - Erken yola çıkın",
+                            Impact = "traffic_avoidance"
+                        });
+                    }
+                }
 
-                    _logger.LogInformation($"[RECOMMENDATIONS] Rota önerileri başarılı: {result?.RouteRecommendations.Count} öneri");
-                    return result ?? new RouteRecommendationsResponse();
-                }
-                else
+                _logger.LogInformation($"[RECOMMENDATIONS] Rota önerileri oluşturuldu: {recommendations.Count} öneri");
+                
+                return new RouteRecommendationsResponse
                 {
-                    _logger.LogWarning($"[RECOMMENDATIONS] ML servisi yanıt vermedi: {response.StatusCode}");
-                    return new RouteRecommendationsResponse();
-                }
+                    WeatherAnalysis = weatherResponse ?? new AdvancedWeatherResponse(),
+                    RouteRecommendations = recommendations,
+                    CostAnalysis = new Dictionary<string, object>(),
+                    TrafficAnalysis = new Dictionary<string, object>(),
+                    WeatherImpact = new Dictionary<string, object>()
+                };
             }
             catch (Exception ex)
             {
@@ -310,17 +339,6 @@ namespace Services
             return month is 6 or 7 or 8 or 9 ? "güneş" : "yağmur";
         }
 
-        public async Task<bool> IsMLServiceHealthyAsync() //ML servisi sağlık kontrolü
-        {
-            try
-            {
-                var response = await _httpClient.GetAsync($"{_mlServiceUrl}/health"); //ML servisi sağlık kontrolü
-                return response.IsSuccessStatusCode; //ML servisi sağlık kontrolü
-            }
-            catch
-            {
-                return false;
-            }
-        }
+
     }
 } 

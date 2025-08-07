@@ -15,17 +15,7 @@ import os
 from traffic_ai_model import TrafficPredictionAI
 from route_optimization_ai import RouteOptimizationAI
 
-def weather_code_to_str(code):
-    mapping = {
-        1: 'güneş',
-        2: 'yağmur',
-        3: 'kar',
-        4: 'bulutlu',
-        5: 'sis',
-        6: 'fırtına',
-        7: 'rüzgar'
-    }
-    return mapping.get(code, 'güneş')
+
 
 def create_training_data():
     """Eğitim verisi oluştur"""
@@ -160,7 +150,7 @@ def create_training_data():
                 # Veri noktası oluştur
                 data_point = {
                     'timestamp': current_date.replace(hour=hour).isoformat(),
-                    'weather_condition': weather_code_to_str(weather_code),
+                    'weather_condition': weather_code,
                     'traffic_level': traffic_multiplier,
                     'distance': route_distance,
                     'duration': actual_duration,
@@ -317,25 +307,7 @@ def calculate_comfort_score(road_quality, weather_code, traffic_multiplier):
     
     return min(max(comfort, 0.1), 1.0)
 
-def calculate_safety_score(road_quality, weather_code, highway_ratio):
-    """Güvenlik skoru hesaplama"""
-    base_safety = 0.8
-    
-    # Yol kalitesi etkisi
-    safety = base_safety * road_quality
-    
-    # Hava durumu etkisi
-    if weather_code == 2:  # Kar
-        safety *= 0.6
-    elif weather_code in [1, 5]:  # Yağmur, sis
-        safety *= 0.8
-    elif weather_code == 6:  # Fırtına
-        safety *= 0.7
-    
-    # Otoyol etkisi
-    safety *= (0.9 + highway_ratio * 0.1)
-    
-    return min(max(safety, 0.1), 1.0)
+
 
 def train_models():
     """AI modellerini eğit"""
