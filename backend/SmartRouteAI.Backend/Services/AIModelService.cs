@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text;
 
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class AIModelService
     {

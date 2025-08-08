@@ -2,7 +2,7 @@ using Azure.AI.TextAnalytics;
 using Azure;
 using System.Text.RegularExpressions;
 
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class PromptAnalysisService
     {

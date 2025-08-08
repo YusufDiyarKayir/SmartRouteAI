@@ -740,7 +740,39 @@
                     body: JSON.stringify({ prompt: prompt })
                 });
 
-                const routeData = await routeResponse.json();
+                let routeData;
+                try {
+                    if (!routeResponse.ok) {
+                        throw new Error(`HTTP ${routeResponse.status}: ${routeResponse.statusText}`);
+                    }
+                    const responseText = await routeResponse.text();
+                    if (!responseText) {
+                        throw new Error('Boş yanıt alındı');
+                    }
+                    routeData = JSON.parse(responseText);
+                } catch (error) {
+                    console.error('Rota hesaplama hatası:', error);
+                    routeData = {
+                        alternatives: [],
+                        requests: [],
+                        constraints: [],
+                        weatherPredictions: [],
+                        routeRecommendations: [],
+                        costAnalysis: {},
+                        routeSummary: {
+                            totalCities: 0,
+                            isHolidayPeriod: false,
+                            holidayName: "",
+                            avgTrafficMultiplier: 1.0,
+                            totalDurationImpact: 1.0,
+                            mlPredictionsCount: 0,
+                            weatherConditions: []
+                        },
+                        mlServiceUsed: false,
+                        trafficMultipliers: [],
+                        holidayInfo: {}
+                    };
+                }
                 
                 // Yükleniyor mesajını kaldır
                 removeMessage(loadingId);
@@ -930,12 +962,27 @@
             if (window._cityMarkers) window._cityMarkers.forEach(m => map.removeLayer(m));
             window._cityMarkers = [];
             try {
-                const resp = await fetch('http://localhost:5077/api/Route/plan', {
+                const resp = await fetch('/api/route/plan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt })
                 });
-                const data = await resp.json();
+                
+                let data;
+                try {
+                    if (!resp.ok) {
+                        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+                    }
+                    const responseText = await resp.text();
+                    if (!responseText) {
+                        throw new Error('Boş yanıt alındı');
+                    }
+                    data = JSON.parse(responseText);
+                } catch (error) {
+                    console.error('Rota hesaplama hatası:', error);
+                    resultDiv.textContent = `Rota hesaplama hatası: ${error.message}`;
+                    return;
+                }
                 if (!data.alternatives || data.alternatives.length === 0) {
                     resultDiv.textContent = 'Rota bulunamadı veya şehirler tespit edilemedi.';
                     return;

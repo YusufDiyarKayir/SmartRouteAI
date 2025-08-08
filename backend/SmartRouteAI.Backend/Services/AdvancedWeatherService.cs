@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text;
+using SmartRouteAI.Backend.Models;
 
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class AdvancedWeatherService
     {
@@ -339,6 +340,37 @@ namespace Services
             return month is 6 or 7 or 8 or 9 ? "güneş" : "yağmur";
         }
 
+        public async Task<(string Condition, string Description)> GetWeatherInfoAsync(double lat, double lng, DateTime dt)
+        {
+            try
+            {
+                string weatherApiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? "";
+                string forecastUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lng}&appid={weatherApiKey}&lang=tr&units=metric";
+                
+                var forecastResp = await _httpClient.GetFromJsonAsync<OpenWeatherForecastResponse>(forecastUrl);
+                if (forecastResp?.list.Length > 0)
+                {
+                    var closest = forecastResp.list.OrderBy(x => Math.Abs((DateTimeOffset.FromUnixTimeSeconds(x.dt).DateTime - dt).TotalMinutes)).First();
+                    var main = closest.weather[0].main.ToLower();
+                    var description = closest.weather[0].description;
 
+                    var condition = main switch
+                    {
+                        var w when w.IndexOf("rain", StringComparison.OrdinalIgnoreCase) >= 0 => "Rainy",
+                        var w when w.IndexOf("snow", StringComparison.OrdinalIgnoreCase) >= 0 => "Snowy",
+                        var w when w.IndexOf("cloud", StringComparison.OrdinalIgnoreCase) >= 0 => "Cloudy",
+                        _ => "Sunny"
+                    };
+
+                    return (condition, description);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Hava durumu bilgisi alınırken hata oluştu");
+            }
+
+            return ("Sunny", "");
+        }
     }
 } 

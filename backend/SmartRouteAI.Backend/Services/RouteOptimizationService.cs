@@ -2,7 +2,7 @@ using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class RouteOptimizationService
     {

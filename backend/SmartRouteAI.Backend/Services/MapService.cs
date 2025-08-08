@@ -1,4 +1,4 @@
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class MapService
     {

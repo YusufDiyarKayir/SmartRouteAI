@@ -1,259 +1,174 @@
 using Microsoft.AspNetCore.Mvc;
-using Services;
+using SmartRouteAI.Backend.Models;
+using SmartRouteAI.Backend.Services;
 
-namespace SmartRouteAI.Backend.Controllers
+namespace SmartRouteAI.Backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class RouteController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-        
-    public class RouteController : ControllerBase       //RouteController sınıfı
+    private readonly RouteOptimizationService _routeService;
+    private readonly AdvancedWeatherService _weatherService;
+    private readonly HolidayService _holidayService;
+    private readonly PromptAnalysisService _promptService;
+
+    public RouteController(
+        RouteOptimizationService routeService,
+        AdvancedWeatherService weatherService,
+        HolidayService holidayService,
+        PromptAnalysisService promptService)
     {
-        private readonly PromptAnalysisService _promptService; 
-        private readonly RouteOptimizationService _routeService; 
-        private readonly MapService _mapService;
-        private readonly AdvancedWeatherService _advancedWeatherService;
-        private readonly HolidayService _holidayService;
-        
-        public RouteController(PromptAnalysisService promptService, RouteOptimizationService routeService, MapService mapService, AdvancedWeatherService advancedWeatherService, HolidayService holidayService)
-        {
-            _promptService = promptService;
-            _routeService = routeService;
-            _mapService = mapService;
-            _advancedWeatherService = advancedWeatherService;
-            _holidayService = holidayService;
+        _routeService = routeService;
+        _weatherService = weatherService;
+        _holidayService = holidayService;
+        _promptService = promptService;
+    }
 
+    [HttpPost("estimate")]
+    public async Task<IActionResult> GetRouteEstimate([FromBody] RouteRequest request)
+    {
+        try
+        {
+            var dt = DateTime.Parse($"{request.Date}T{request.Time}");
+            var epoch = ((DateTimeOffset)dt).ToUnixTimeSeconds();
+
+            // Tatil kontrolü
+            var isHoliday = await _holidayService.IsHolidayAsync(dt);
+
+            // Hava durumu bilgisi
+            var weatherInfo = await _weatherService.GetWeatherInfoAsync(request.FromLat, request.FromLng, dt);
+
+            // Trafik yoğunluğu tahmini
+            var trafficLevel = GetTrafficLevel(dt);
+
+            // Google Directions API ile rota hesaplama
+            var routes = await GetRoutesFromGoogleAsync(request, epoch, dt, weatherInfo.Description);
+
+            return Ok(new
+            {
+                routes,
+                date = request.Date,
+                time = request.Time,
+                isHoliday,
+                weather = weatherInfo.Condition,
+                trafficLevel
+            });
         }
-
-        [HttpGet("health")]
-        public IActionResult Health() //Sağlık kontrolü
+        catch (Exception ex)
         {
-            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow }); //Sağlık kontrolü
+            return BadRequest(new { error = ex.Message });
         }
+    }
 
-        [HttpPost("analyze-prompt")]
-        public async Task<IActionResult> AnalyzePrompt([FromBody] PromptRequest request)
+    [HttpGet("test")]
+    public IActionResult Test()
+    {
+        return Ok(new { message = "Route controller çalışıyor!" });
+    }
+
+    [HttpPost("analyze-prompt")]
+    public async Task<IActionResult> AnalyzePrompt([FromBody] PromptRequest request)
+    {
+        try
         {
-            try
+            Console.WriteLine($"[ROUTE] AnalyzePrompt çağrıldı. Prompt: {request.Prompt}");
+            
+            // Prompt analizi yap
+            var analysis = await _promptService.AnalyzePromptAsync(request.Prompt);
+            
+            return Ok(new
             {
-                var analysis = await _promptService.AnalyzePromptAsync(request.Prompt);
-                
-                return Ok(new
-                {
-                    source = analysis.Source,
-                    destination = analysis.Destination,
-                    requests = analysis.Requests,
-                    bridgeDirectives = analysis.BridgeDirectives,
-                    highwayDirectives = analysis.HighwayDirectives,
-                    weatherConditions = analysis.WeatherConditions,
-                    travelDate = analysis.TravelDate,
-                    travelTime = analysis.TravelTime,
-                    route = analysis.Route
-                });
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Sizi anlayamadım"))
-            {
-                Console.WriteLine($"[ANALYZE-PROMPT] Anlamsız prompt: {ex.Message}");
-                return BadRequest(new { 
-                    error = ex.Message,
-                    type = "meaningless_prompt",
-                    suggestion = "Lütfen geçerli bir rota isteği girin. Örnek: 'İstanbul'dan Ankara'ya git' veya 'Bursa'dan İzmir'e yolculuk'"
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ANALYZE-PROMPT] Error: {ex.Message}");
-                return BadRequest(new { error = "Prompt analizi sırasında hata oluştu" });
-            }
+                source = analysis.Source,
+                destination = analysis.Destination,
+                requests = analysis.Requests,
+                bridgeDirectives = analysis.BridgeDirectives,
+                highwayDirectives = analysis.HighwayDirectives,
+                weatherConditions = analysis.WeatherConditions,
+                travelDate = analysis.TravelDate,
+                travelTime = analysis.TravelTime,
+                route = analysis.Route
+            });
         }
-
-        [HttpPost("plan")]
-        public async Task<IActionResult> PlanRoute([FromBody] PromptRequest request)
+        catch (Exception ex)
         {
-            try
+            Console.WriteLine($"[ROUTE] AnalyzePrompt hatası: {ex.Message}");
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("plan")]
+    public async Task<IActionResult> PlanRoute([FromBody] PromptRequest request)
+    {
+        try
+        {
+            Console.WriteLine($"[ROUTE] PlanRoute çağrıldı. Prompt: {request.Prompt}");
+            
+            // Prompt analizi yap
+            var analysis = await _promptService.AnalyzePromptAsync(request.Prompt);
+            Console.WriteLine($"[ROUTE] Analysis tamamlandı. Source: {analysis.Source}, Destination: {analysis.Destination}");
+            
+            // Tatil kontrolü
+            var holidayInfo = new Dictionary<string, object>();
+            if (!string.IsNullOrEmpty(analysis.TravelDate))
             {
-                var analysis = await _promptService.AnalyzePromptAsync(request.Prompt);
-                
-                // Tatil kontrolü
-                var holidayInfo = new Dictionary<string, object>();
-                if (!string.IsNullOrEmpty(analysis.TravelDate))
+                try
                 {
-                    try
+                    var travelDate = DateTime.Parse(analysis.TravelDate);
+                    var holiday = _holidayService.CheckHoliday(travelDate);
+                    var trafficMultiplier = _holidayService.GetTrafficMultiplier(travelDate);
+                    var holidayImpact = _holidayService.GetHolidayImpact(travelDate);
+                    
+                    holidayInfo = new Dictionary<string, object>
                     {
-                        var travelDate = DateTime.Parse(analysis.TravelDate);
-                        var holiday = _holidayService.CheckHoliday(travelDate);
-                        var trafficMultiplier = _holidayService.GetTrafficMultiplier(travelDate);
-                        var holidayImpact = _holidayService.GetHolidayImpact(travelDate);
-                        
-                        holidayInfo = new Dictionary<string, object>
-                        {
-                            ["isHoliday"] = holiday != null,
-                            ["holidayName"] = holiday?.Name ?? "Tatil günü değil",
-                            ["holidayType"] = holiday?.Type ?? "",
-                            ["trafficMultiplier"] = trafficMultiplier,
-                            ["holidayImpact"] = holidayImpact,
-                            ["dayOfWeek"] = travelDate.DayOfWeek.ToString(),
-                            ["isWeekend"] = travelDate.DayOfWeek == DayOfWeek.Saturday || travelDate.DayOfWeek == DayOfWeek.Sunday
-                        };
-                        
-                        Console.WriteLine($"[HOLIDAY] Date: {analysis.TravelDate}, Holiday: {holiday?.Name ?? "None"}, Traffic Multiplier: {trafficMultiplier}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[HOLIDAY] Error parsing date: {ex.Message}");
-                    }
+                        ["isHoliday"] = holiday != null,
+                        ["holidayName"] = holiday?.Name ?? "Tatil günü değil",
+                        ["holidayType"] = holiday?.Type ?? "",
+                        ["trafficMultiplier"] = trafficMultiplier,
+                        ["holidayImpact"] = holidayImpact,
+                        ["dayOfWeek"] = travelDate.DayOfWeek.ToString(),
+                        ["isWeekend"] = travelDate.DayOfWeek == DayOfWeek.Saturday || travelDate.DayOfWeek == DayOfWeek.Sunday
+                    };
                 }
-                
-                // ML tabanlı hava durumu tahmini
-                var mlWeatherPredictions = new List<object>();
-                var routeRecommendations = new List<object>();
-                var costAnalysis = new Dictionary<string, object>();
-                var weatherConditions = new List<string>();
-                var trafficMultipliers = new List<double>();
-                
-                Console.WriteLine($"[CONTROLLER] Analysis.TravelDate: '{analysis.TravelDate}'");
-                Console.WriteLine($"[CONTROLLER] Analysis.Route.Count: {analysis.Route.Count}");
-                Console.WriteLine($"[CONTROLLER] Analysis.Route: [{string.Join(", ", analysis.Route)}]");
-                Console.WriteLine($"[CONTROLLER] Analysis.WeatherConditions: [{string.Join(", ", analysis.WeatherConditions)}]");
-                
-                // Hava durumu koşulları varsa veya rota bilgisi varsa ML servisini çağır
-                if ((analysis.WeatherConditions.Any() || !string.IsNullOrEmpty(analysis.TravelDate)) && analysis.Route.Count > 0)
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        // Tarih belirtilmediğinde bugünün tarihini ve şu anın saatini kullan
-                        var now = DateTime.Now;
-                        var travelDate = !string.IsNullOrEmpty(analysis.TravelDate) ? analysis.TravelDate : now.ToString("yyyy-MM-dd");
-                        var travelTime = !string.IsNullOrEmpty(analysis.TravelTime) ? analysis.TravelTime : now.ToString("HH:mm");
-                        
-                        Console.WriteLine($"[CONTROLLER] ML Service çağrılıyor - Route: {string.Join(", ", analysis.Route)}, Date: {travelDate}, Time: {travelTime}");
-                        
-                        // ML servisinden hava durumu tahmini al
-                        var mlPredictions = await _advancedWeatherService.GetAdvancedWeatherPredictionsAsync(analysis.Route, travelDate, analysis.WeatherConditions);
-                        
-                        Console.WriteLine($"[CONTROLLER] ML Service yanıtı alındı - Predictions count: {mlPredictions?.Predictions?.Count ?? 0}");
-                        
-                        if (mlPredictions?.Predictions?.Any() == true)
-                        {
-                            Console.WriteLine($"[CONTROLLER] ML tahminleri işleniyor...");
-                            Console.WriteLine($"[CONTROLLER] ML Predictions count: {mlPredictions.Predictions.Count}");
-                            
-                            // Her tahmin için detaylı log
-                            foreach (var pred in mlPredictions.Predictions)
-                            {
-                                Console.WriteLine($"[CONTROLLER] Prediction: {pred.City} -> Weather:'{pred.PredictedWeather}', Temp:{pred.AvgTemperature}, Confidence:{pred.Confidence}");
-                            }
-                            
-                            mlWeatherPredictions = mlPredictions.Predictions.Select(p => new {
-                                city = p.City,
-                                date = p.Date,
-                                season = p.Season,
-                                predictedWeather = p.PredictedWeather,
-                                confidence = p.Confidence,
-                                avgTemperature = p.AvgTemperature,
-                                climateZone = p.ClimateZone,
-                                trafficMultiplier = p.TrafficMultiplier,
-                                weatherDurationImpact = p.WeatherDurationImpact,
-                                isHoliday = p.IsHoliday,
-                                holidayName = p.HolidayName,
-                                explanation = p.Explanation,
-                                trafficExplanation = p.TrafficExplanation
-                            }).ToList<object>();
-                            
-                            // ML tahminlerinden hava koşullarını ve trafik çarpanlarını al
-                            var allWeathers = mlPredictions.Predictions.Select(p => p.PredictedWeather).ToList();
-                            Console.WriteLine($"[CONTROLLER] All weathers before distinct: [{string.Join("|", allWeathers)}]");
-                            
-                            // Kullanıcının istediği hava durumu koşullarını öncelik ver
-                            if (analysis.WeatherConditions.Any())
-                            {
-                                weatherConditions = analysis.WeatherConditions;
-                                Console.WriteLine($"[CONTROLLER] Using user-requested weather conditions: {string.Join(", ", weatherConditions)}");
-                            }
-                            else
-                            {
-                                weatherConditions = allWeathers.Distinct().ToList();
-                                Console.WriteLine($"[CONTROLLER] Using ML-predicted weather conditions: {string.Join(", ", weatherConditions)}");
-                            }
-                            
-                            trafficMultipliers = mlPredictions.Predictions.Select(p => p.TrafficMultiplier).ToList();
-                            
-                            Console.WriteLine($"[CONTROLLER] Weather conditions: {string.Join(", ", weatherConditions)}");
-                            Console.WriteLine($"[CONTROLLER] Traffic multipliers: {string.Join(", ", trafficMultipliers)}");
-                            Console.WriteLine($"[CONTROLLER] Weather conditions count: {weatherConditions.Count}");
-                            Console.WriteLine($"[CONTROLLER] Weather conditions content: [{string.Join("|", weatherConditions)}]");
-                            
-                            // Rota önerileri
-                            var recommendations = await _advancedWeatherService.GetRouteRecommendationsAsync(analysis.Route, travelDate);
-                            routeRecommendations = recommendations.RouteRecommendations.Select(r => new {
-                                type = r.Type,
-                                priority = r.Priority,
-                                message = r.Message,
-                                impact = r.Impact
-                            }).ToList<object>();
-                            
-                            // Maliyet analizi
-                            if (analysis.Route.Count > 1)
-                            {
-                                var estimatedDistance = analysis.Route.Count * 100.0; // Tahmini mesafe
-                                var highways = analysis.HighwayDirectives.Where(h => h.Use).Select(h => h.Name).ToList();
-                                costAnalysis = await _advancedWeatherService.CalculateRouteCostAsync(estimatedDistance, highways);
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[CONTROLLER] ML Service boş yanıt döndü veya null");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[CONTROLLER] ML Weather Service error: {ex.Message}");
-                        Console.WriteLine($"[CONTROLLER] Stack trace: {ex.StackTrace}");
-                    }
+                    Console.WriteLine($"[HOLIDAY] Error parsing date: {ex.Message}");
                 }
-                else
-                {
-                    Console.WriteLine($"[CONTROLLER] ML Service çağrılmadı - TravelDate: {analysis.TravelDate}, WeatherConditions: [{string.Join(", ", analysis.WeatherConditions)}], Route count: {analysis.Route.Count}");
-                }
-                
-                // ML tahminlerini kullanarak rota optimizasyonu yap
-                Console.WriteLine($"[CONTROLLER] Calling OptimizeRouteAsync with weatherConditions: [{string.Join("|", weatherConditions)}]");
-                
-                var results = await _routeService.OptimizeRouteAsync(
-                    analysis.Source,
-                    analysis.Destination,
-                    analysis.Route.Skip(1).Take(analysis.Route.Count - 2).ToList(),
-                    analysis.Requests,
-                    analysis.BridgeDirectives,
-                    analysis.HighwayDirectives,
-                    weatherConditions, // ML'den gelen hava koşulları
-                    analysis.TravelDate,
-                    analysis.TravelTime
-                );
-                
-                // Her rota için mapUrl üret
-                var mapUrls = results.Select(r => _mapService.GetMapUrlAsync(r.Route)).ToArray();
-                await Task.WhenAll(mapUrls);
-                
-                var response = results.Select((r, i) => new {
-                    route = r.Route,
-                    polyline = r.Polyline,
-                    distanceKm = r.DistanceKm,
-                    durationMin = r.DurationMin,
-                    adjustedDurationMin = r.AdjustedDurationMin,
-                    summary = r.Summary,
-                    hasToll = r.HasToll,
-                    weatherImpact = r.WeatherImpact,
-                    mapUrl = mapUrls[i].Result
-                }).ToList();
-                
-                // Kısıtlamaları frontend'e ilet
-                var constraints = new List<string>();
-                constraints.AddRange(analysis.BridgeDirectives.Select(b => b.Use ? $"{b.Name} köprüsünü kullan" : $"{b.Name} köprüsünü kullanma"));
-                constraints.AddRange(analysis.HighwayDirectives.Select(h => h.Use ? $"{h.Name} otoyolunu kullan" : $"{h.Name} otoyolunu kullanma"));
-                
-                // Route summary hesaplama
-                var routeSummary = new
-                {
+            }
+
+            // Rota optimizasyonu yap
+            var results = await _routeService.OptimizeRouteAsync(
+                analysis.Source,
+                analysis.Destination,
+                analysis.Route.Skip(1).Take(analysis.Route.Count - 2).ToList(),
+                analysis.Requests,
+                analysis.BridgeDirectives,
+                analysis.HighwayDirectives,
+                analysis.WeatherConditions,
+                analysis.TravelDate,
+                analysis.TravelTime
+            );
+
+            // Yanıt formatını frontend'e uygun hale getir
+            var response = results.Select(r => new {
+                route = r.Route,
+                polyline = r.Polyline,
+                distanceKm = r.DistanceKm,
+                durationMin = r.DurationMin,
+                adjustedDurationMin = r.AdjustedDurationMin,
+                summary = r.Summary,
+                hasToll = r.HasToll,
+                weatherImpact = r.WeatherImpact
+            }).ToList();
+
+            var result = new {
+                alternatives = response,
+                requests = analysis.Requests,
+                constraints = new List<string>(),
+                weatherPredictions = new List<object>(),
+                routeRecommendations = new List<object>(),
+                costAnalysis = new Dictionary<string, object>(),
+                routeSummary = new {
                     totalCities = analysis.Route.Count,
                     isHolidayPeriod = false,
                     holidayName = "",
@@ -261,83 +176,146 @@ namespace SmartRouteAI.Backend.Controllers
                     totalDurationImpact = 1.0,
                     mlPredictionsCount = 0,
                     weatherConditions = new List<string>()
-                };
-                
-                // ML tahminlerinden route summary'yi güncelle
-                if (mlWeatherPredictions.Any())
-                {
-                    try
-                    {
-                        var firstPrediction = mlWeatherPredictions.First();
-                        var properties = firstPrediction.GetType().GetProperties();
-                        
-                        var isHolidayProp = properties.FirstOrDefault(p => p.Name == "isHoliday");
-                        var holidayNameProp = properties.FirstOrDefault(p => p.Name == "holidayName");
-                        var trafficMultiplierProp = properties.FirstOrDefault(p => p.Name == "trafficMultiplier");
-                        var weatherDurationImpactProp = properties.FirstOrDefault(p => p.Name == "weatherDurationImpact");
-                        
-                        var isHoliday = isHolidayProp?.GetValue(firstPrediction) as bool? ?? false;
-                        var holidayName = holidayNameProp?.GetValue(firstPrediction) as string ?? "";
-                        var avgTrafficMultiplier = trafficMultiplierProp?.GetValue(firstPrediction) as double? ?? 1.0;
-                        var totalDurationImpact = weatherDurationImpactProp?.GetValue(firstPrediction) as double? ?? 1.0;
-                        
-                        // ML tahminlerinden ortalama trafik çarpanını hesapla
-                        if (trafficMultipliers.Any())
-                        {
-                            avgTrafficMultiplier = trafficMultipliers.Average();
-                        }
-                        
-                        routeSummary = new
-                        {
-                            totalCities = analysis.Route.Count,
-                            isHolidayPeriod = isHoliday,
-                            holidayName = holidayName,
-                            avgTrafficMultiplier = avgTrafficMultiplier,
-                            totalDurationImpact = totalDurationImpact,
-                            mlPredictionsCount = mlWeatherPredictions.Count,
-                            weatherConditions = weatherConditions
-                        };
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[CONTROLLER] ML Route summary calculation error: {ex.Message}");
-                    }
-                }
-                
-                return Ok(new {
-                    alternatives = response,
-                    requests = analysis.Requests,
-                    constraints,
-                    weatherPredictions = mlWeatherPredictions, // ML tahminleri
-                    routeRecommendations = routeRecommendations,
-                    costAnalysis = costAnalysis,
-                    routeSummary = routeSummary,
-                    mlServiceUsed = mlWeatherPredictions.Any(),
-                    trafficMultipliers = trafficMultipliers,
-                    holidayInfo = holidayInfo // Tatil bilgileri
-                });
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Sizi anlayamadım"))
-            {
-                Console.WriteLine($"[PLAN-ROUTE] Anlamsız prompt: {ex.Message}");
-                return BadRequest(new { 
-                    error = ex.Message,
-                    type = "meaningless_prompt",
-                    suggestion = "Lütfen geçerli bir rota isteği girin. Örnek: 'İstanbul'dan Ankara'ya git' veya 'Bursa'dan İzmir'e yolculuk'"
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[PLAN-ROUTE] Error: {ex.Message}");
-                return BadRequest(new { error = "Rota planlama sırasında hata oluştu" });
-            }
+                },
+                mlServiceUsed = false,
+                trafficMultipliers = new List<double>(),
+                holidayInfo = holidayInfo
+            };
+            
+            Console.WriteLine($"[ROUTE] Yanıt hazırlandı. Alternatives count: {response.Count}");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ROUTE] Hata: {ex.Message}");
+            Console.WriteLine($"[ROUTE] Stack trace: {ex.StackTrace}");
+            return BadRequest(new { error = ex.Message });
         }
     }
 
-    public class PromptRequest
+    private string GetTrafficLevel(DateTime dt)
     {
-        public string Prompt { get; set; } = string.Empty;
+        var hour = dt.Hour;
+        var dayOfWeek = dt.DayOfWeek;
+
+        if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+            return "Low";
+        
+        if (hour >= 7 && hour <= 10 || hour >= 17 && hour <= 20)
+            return "High";
+        
+        if (hour >= 11 && hour <= 16)
+            return "Medium";
+        
+        return "Low";
     }
 
+    private async Task<List<object>> GetRoutesFromGoogleAsync(RouteRequest request, long epoch, DateTime dt, string weatherDesc)
+    {
+        var routes = new List<object>();
+        var googleApiKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "";
+        
+        var googleUrl = $"https://maps.googleapis.com/maps/api/directions/json?" +
+                       $"origin={request.FromLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{request.FromLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
+                       $"&destination={request.ToLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{request.ToLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
+                       $"&departure_time={epoch}&alternatives=true&key={googleApiKey}";
 
+        try
+        {
+            using var http = new HttpClient();
+            var googleResp = await http.GetStringAsync(googleUrl);
+            var googleObj = System.Text.Json.JsonSerializer.Deserialize<GoogleDirectionsResponse>(googleResp);
+
+            if (googleObj?.routes.Length > 0)
+            {
+                var (minDurationIdx, minTollIdx) = FindOptimalRoutes(googleObj.routes);
+                routes = ProcessRoutes(googleObj.routes, minDurationIdx, minTollIdx, dt, weatherDesc);
+            }
+        }
+        catch (Exception ex)
+        {
+            routes.Add(new { title = "Hata", distanceKm = 0, estimatedDurationMinutes = 0, polyline = "", tollClass = "-", error = ex.Message });
+        }
+
+        return routes;
+    }
+
+    private (int minDurationIdx, int minTollIdx) FindOptimalRoutes(GoogleRoute[] routes)
+    {
+        int minDurationIdx = 0, minTollIdx = 0;
+        int minDuration = int.MaxValue, minToll = int.MaxValue;
+
+        for (int i = 0; i < routes.Length; i++)
+        {
+            var r = routes[i];
+            var leg = r.legs[0];
+            double durationMin = leg.duration_in_traffic?.value / 60.0 ?? leg.duration.value / 60.0;
+            int tollCount = CountTolls(leg.steps);
+
+            if (durationMin < minDuration) { minDuration = (int)durationMin; minDurationIdx = i; }
+            if (tollCount < minToll) { minToll = tollCount; minTollIdx = i; }
+        }
+
+        return (minDurationIdx, minTollIdx);
+    }
+
+    private int CountTolls(GoogleStep[] steps)
+    {
+        if (steps == null) return 0;
+
+        return steps.Count(step => 
+            step.html_instructions?.ToLower().Contains("toll") == true || 
+            step.html_instructions?.ToLower().Contains("ücretli") == true);
+    }
+
+    private List<object> ProcessRoutes(GoogleRoute[] routes, int minDurationIdx, int minTollIdx, DateTime dt, string weatherDesc)
+    {
+        var processedRoutes = new List<object>();
+
+        for (int i = 0; i < routes.Length; i++)
+        {
+            var r = routes[i];
+            var leg = r.legs[0];
+            double distanceKm = leg.distance.value / 1000.0;
+            double durationMin = leg.duration_in_traffic?.value / 60.0 ?? leg.duration.value / 60.0;
+            string polyline = r.overview_polyline.points;
+
+            int tollCount = CountTolls(leg.steps);
+            string tollClass = GetTollClass(tollCount);
+            string tollInfo = tollCount == 0 ? "Ücretsiz rota" : $"Tahmini {tollCount} adet ücretli geçiş olabilir.";
+
+            string title = $"Alternatif {i + 1}";
+            if (i == minDurationIdx) title += " - En hızlı";
+            if (i == minTollIdx) title += " - En düşük maliyetli";
+            if (tollCount == 0) title += " - Ücretsiz";
+
+            var arrival = dt.AddMinutes(durationMin);
+            string arrivalStr = arrival.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"));
+
+            processedRoutes.Add(new
+            {
+                title,
+                distanceKm = Math.Round(distanceKm, 2),
+                estimatedDurationMinutes = Math.Round(durationMin, 1),
+                polyline,
+                tollClass,
+                tollCount,
+                tollInfo,
+                arrivalStr,
+                weatherDesc
+            });
+        }
+
+        return processedRoutes;
+    }
+
+    private string GetTollClass(int tollCount)
+    {
+        return tollCount switch
+        {
+            0 => "Ücretsiz",
+            1 or 2 => "Orta",
+            _ => "Yüksek"
+        };
+    }
 } 

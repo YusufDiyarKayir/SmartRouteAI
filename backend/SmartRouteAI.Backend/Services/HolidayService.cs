@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Services
+namespace SmartRouteAI.Backend.Services
 {
     public class HolidayService
     {
@@ -38,6 +38,11 @@ namespace Services
         public bool IsHoliday(DateTime date)
         {
             return CheckHoliday(date) != null;
+        }
+
+        public async Task<bool> IsHolidayAsync(DateTime date)
+        {
+            return await Task.FromResult(IsHoliday(date));
         }
         //Trafik yoğunluğu tahmini
         public double GetTrafficMultiplier(DateTime date)
