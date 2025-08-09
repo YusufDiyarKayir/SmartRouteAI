@@ -3,6 +3,11 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple
 import random
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 class AdvancedWeatherPredictor:
     def __init__(self):
@@ -19,10 +24,9 @@ class AdvancedWeatherPredictor:
                 print(f"[ML] Kullanıcı hava durumu koşulları: {user_weather_conditions}")
             
             # Tarih bilgilerini çıkar
-            month = self._extract_month_from_date(date_str)
-            day = self._extract_day_from_date(date_str)
-            year = self._extract_year_from_date(date_str)
-            season = self._get_season(month)
+            month = self._extract_month_from_date(date_str) #Ay tahmini
+            day = self._extract_day_from_date(date_str) #Gün tahmini
+            season = self._get_season(month)  #Mevsim tahmini
             
             predictions = []
             
@@ -31,13 +35,13 @@ class AdvancedWeatherPredictor:
                     # Kullanıcının istediği hava durumu varsa onu kullan
                     if user_weather_conditions and len(user_weather_conditions) > 0:
                         predicted_weather = user_weather_conditions[0]  # İlk koşulu kullan
-                        confidence = 0.95  # Kullanıcı belirttiği için yüksek güven
+                        confidence = 1.0  # Kullanıcı belirttiği için tam güven
                         print(f"[ML] Kullanıcı hava durumu kullanılıyor: {city} -> {predicted_weather}")
                         # Kullanıcı isteğine göre sıcaklık ata
                         if 'kar' in predicted_weather:
                             avg_temperature = 0
                         elif 'yağmur' in predicted_weather:
-                            avg_temperature = 8
+                            avg_temperature = 8 
                         elif 'bulut' in predicted_weather:
                             avg_temperature = 12
                         elif 'sis' in predicted_weather:
@@ -51,11 +55,11 @@ class AdvancedWeatherPredictor:
                         explanation = f"Kullanıcı isteği: {city} için {predicted_weather} hava durumu"
                     else:
                         # Tarihsel veri tabanlı tahmin yap
-                        weather_pred = self.db.get_weather_prediction(city, month, day)
-                        predicted_weather = weather_pred["predicted_weather"]
-                        confidence = weather_pred["confidence"]
-                        avg_temperature = weather_pred["avg_temperature"]
-                        explanation = weather_pred["explanation"]
+                        weather_pred = self.db.get_weather_prediction(city, month, day) #Tarihsel veri tabanından hava durumu tahmini
+                        predicted_weather = weather_pred["predicted_weather"] #Tahmin edilen hava durumu
+                        confidence = weather_pred["confidence"] #Güven oranı
+                        avg_temperature = weather_pred["avg_temperature"] #Ortalama sıcaklık
+                        explanation = weather_pred["explanation"] #Açıklama
                         
                         # Eğer veri yoksa uyarı ver
                         if predicted_weather == "veri_yok":
@@ -80,25 +84,26 @@ class AdvancedWeatherPredictor:
                     # Trafik açıklaması
                     traffic_explanation = self._get_traffic_explanation(city, traffic_multiplier, is_holiday, holiday_name)
                     
+                    #Tahmin sonucu
                     prediction = {
                         "city": city,
                         "date": date_str,
                         "month": month,
                         "day": day,
                         "season": season,
-                        "predicted_weather": predicted_weather,
+                        "predicted_weather": predicted_weather, 
                         "confidence": confidence,
                         "avg_temperature": avg_temperature,
-                        "climate_zone": self.db.cities_data.get(city.title(), {}).get("climate", "Bilinmiyor"),
+                        "climate_zone": self.db.cities_data.get(city.title(), {}).get("climate", "Bilinmiyor"), 
                         "traffic_multiplier": traffic_multiplier,
                         "weather_duration_impact": weather_duration_impact,
                         "is_holiday": is_holiday,
                         "holiday_name": holiday_name,
-                        "explanation": explanation,
-                        "traffic_explanation": traffic_explanation
+                        "explanation": explanation, #Açıklama
+                        "traffic_explanation": traffic_explanation #Trafik açıklaması
                     }
                     
-                    predictions.append(prediction)
+                    predictions.append(prediction) #Tahmin sonucu listesine ekle
                     print(f"[ML] Tahmin tamamlandı: {city} -> {predicted_weather} (güven: {confidence})")
                     
                 except Exception as e:
@@ -124,19 +129,19 @@ class AdvancedWeatherPredictor:
             
             # Rota özeti
             route_summary = {
-                "total_cities": len(cities),
-                "avg_confidence": sum([p["confidence"] for p in predictions]) / len(predictions) if predictions else 0.6,
-                "is_holiday_period": any([p["is_holiday"] for p in predictions]),
-                "holiday_name": next((p["holiday_name"] for p in predictions if p["is_holiday"]), ""),
-                "weather_conditions": list(set([p["predicted_weather"] for p in predictions])),
-                "climate_zones": list(set([p["climate_zone"] for p in predictions])),
-                "avg_traffic_multiplier": sum([p["traffic_multiplier"] for p in predictions]) / len(predictions) if predictions else 1.0,
-                "total_duration_impact": sum([p["weather_duration_impact"] for p in predictions]) / len(predictions) if predictions else 1.0
+                "total_cities": len(cities), #Toplam şehir sayısı
+                "avg_confidence": sum([p["confidence"] for p in predictions]) / len(predictions) if predictions else 0.6, #Ortalama güven oranı
+                "is_holiday_period": any([p["is_holiday"] for p in predictions]), #Tatil dönemi mi?
+                "holiday_name": next((p["holiday_name"] for p in predictions if p["is_holiday"]), ""), #Tatil adı
+                "weather_conditions": list(set([p["predicted_weather"] for p in predictions])), #Hava durumları
+                "climate_zones": list(set([p["climate_zone"] for p in predictions])), 
+                "avg_traffic_multiplier": sum([p["traffic_multiplier"] for p in predictions]) / len(predictions) if predictions else 1.0, #Ortalama trafik çarpanı
+                "total_duration_impact": sum([p["weather_duration_impact"] for p in predictions]) / len(predictions) if predictions else 1.0 #Toplam süre etkisi
             }
             
             return {
-                "predictions": predictions,
-                "route_summary": route_summary
+                "predictions": predictions, #Tahmin sonuçları
+                "route_summary": route_summary #Rota özeti
             }
             
         except Exception as e:
@@ -152,7 +157,7 @@ class AdvancedWeatherPredictor:
             }
             
             # Tarih formatını kontrol et
-            import re
+            import re #Regex kullanımı
             iso_pattern = r'(\d{4})-(\d{1,2})-\d{1,2}'
             iso_match = re.search(iso_pattern, date_str)
             if iso_match:
@@ -211,16 +216,7 @@ class AdvancedWeatherPredictor:
             print(f"[DEBUG] Error in _extract_day_from_date: {e}")
             return 1
     
-    def _extract_year_from_date(self, date_str: str) -> int:
-        """Tarih string'inden yıl numarasını çıkar"""
-        try:
-            parts = date_str.split()
-            for part in parts:
-                if part.isdigit() and len(part) == 4:
-                    return int(part)
-            return datetime.now().year
-        except:
-            return datetime.now().year
+
     
     def _get_season(self, month: int) -> str:
         """Ay numarasına göre mevsim döndür"""
@@ -275,16 +271,16 @@ class AdvancedWeatherPredictor:
     def _get_traffic_explanation(self, city: str, multiplier: float, is_holiday: bool, holiday_name: str) -> str:
         """Trafik durumu açıklaması"""
         if is_holiday:
-            if multiplier > 1.5:
+            if multiplier > 1.5: 
                 return f"{holiday_name} nedeniyle {city} şehrinde yoğun tatil trafiği bekleniyor"
-            elif multiplier < 0.7:
+            elif multiplier < 0.8:
                 return f"{holiday_name} nedeniyle {city} şehrinde trafik yoğunluğu azalacak"
             else:
                 return f"{holiday_name} nedeniyle {city} şehrinde normal trafik yoğunluğu"
         else:
             if multiplier > 1.5:
                 return f"{city} şehrinde yoğun trafik bekleniyor"
-            elif multiplier < 0.7:
+            elif multiplier < 1.0:
                 return f"{city} şehrinde hafif trafik bekleniyor"
             else:
                 return f"{city} şehrinde normal trafik yoğunluğu"
@@ -292,7 +288,7 @@ class AdvancedWeatherPredictor:
     def _get_fallback_predictions(self, cities: List[str], date_str: str) -> Dict:
         """Fallback tahminler"""
         predictions = []
-        for city in cities:
+        for city in cities: 
             predictions.append({
                 "city": city,
                 "date": date_str,
@@ -381,83 +377,4 @@ class AdvancedWeatherPredictor:
         
         return recommendations
 
-# Flask API entegrasyonu
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-
-predictor = AdvancedWeatherPredictor()
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({
-        "status": "healthy",
-        "service": "ML-Based Weather Predictor",
-        "cities_loaded": len(predictor.db.cities_data),
-        "models_loaded": True,  # ML modelleri yüklü
-        "features": [
-            "ML tabanlı hava durumu tahmini",
-            "Coğrafi veri analizi",
-            "Trafik yoğunluğu tahmini",
-            "Optimal rota önerileri"
-        ]
-    })
-
-@app.route('/predict_route', methods=['POST'])
-def predict_route_weather():
-    try:
-        data = request.json
-        cities = data.get('cities', [])
-        date = data.get('date', '')
-        user_weather_conditions = data.get('user_weather_conditions', [])
-        
-        if not cities or not date:
-            return jsonify({'error': 'Şehirler listesi ve tarih gerekli'}), 400
-        
-        result = predictor.predict_route_weather(cities, date, user_weather_conditions)
-        return jsonify(result)
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/route_recommendations', methods=['POST'])
-def get_route_recommendations():
-    try:
-        data = request.json
-        cities = data.get('cities', [])
-        date = data.get('date', '')
-        preferences = data.get('preferences', {})
-        
-        if not cities or not date:
-            return jsonify({'error': 'Şehirler listesi ve tarih gerekli'}), 400
-        
-        result = predictor.get_optimal_route_recommendations(cities, date, preferences)
-        return jsonify(result)
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/calculate_cost', methods=['POST'])
-def calculate_route_cost():
-    try:
-        data = request.json
-        distance = data.get('distance', 0)
-        highways = data.get('highways', [])
-        
-        result = predictor.calculate_route_cost(distance, highways)
-        return jsonify(result)
-    
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    print("🚀 ML Tabanlı Hava Durumu Tahmin API'si başlatılıyor...")
-    print("📍 Port: 5001")
-    print("🔗 Endpoints:")
-    print("  - GET  /health")
-    print("  - POST /predict_route")
-    print("  - POST /route_recommendations")
-    print("  - POST /calculate_cost")
-    app.run(host='0.0.0.0', port=5001, debug=True) 
+ 
