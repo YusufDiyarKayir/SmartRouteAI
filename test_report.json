@@ -1,6 +1,6 @@
 {
-  "test_timestamp": "2025-08-07 07:42",
-  "duration_seconds": 8.013207,
+  "test_timestamp": "2025-08-06 13:55",
+  "duration_seconds": 8.852438,
   "total_tests": 9,
   "successful_tests": 9,
   "failed_tests": 0,
@@ -43,7 +43,7 @@
     },
     "Performans Testi": {
       "success": true,
-      "message": "Yanıt süresi: 0.32 saniye",
+      "message": "Yanıt süresi: 0.33 saniye",
       "details": ""
     },
     "Hata Yönetimi Testi": {

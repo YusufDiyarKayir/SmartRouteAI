@@ -102,6 +102,11 @@ class TrafficPredictionAI:
         """Fallback tahmin (rule-based)"""
         base_multiplier = 1.0
         
+        # Zaman etkisi
+        hour = date_time.hour
+        if 7 <= hour <= 9 or 17 <= hour <= 19:  # Rush hour
+            base_multiplier *= 1.3
+        
         # Hafta sonu etkisi
         if date_time.weekday() >= 5:
             base_multiplier *= 1.2
@@ -168,4 +173,28 @@ class TrafficPredictionAI:
             print(f"Model yükleme hatası: {e}")
             return False
 
- 
+if __name__ == "__main__":
+    # Test kodu
+    print("🚀 Trafik AI Model Test Ediliyor...")
+    
+    # Örnek veri oluştur
+    test_data = []
+    for i in range(100):  # 100 satır test verisi
+        timestamp = datetime.now() + timedelta(hours=i)
+        test_data.append({
+            'timestamp': timestamp.isoformat(),
+            'traffic_level': 1.0 + (i % 3) * 0.5,
+            'weather_condition': ['güneş', 'yağmur', 'bulutlu'][i % 3]
+        })
+    
+    # Model oluştur ve eğit
+    traffic_ai = TrafficPredictionAI()
+    traffic_ai.train(test_data)
+    
+    # Test tahmini
+    test_weather = {'condition': 'yağmurlu'}
+    test_time = datetime.now()
+    prediction = traffic_ai.predict_traffic({}, test_weather, test_time)
+    
+    print(f"🎯 Test tahmini: {prediction:.2f}")
+    print("✅ Test tamamlandı!") 

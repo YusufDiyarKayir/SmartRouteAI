@@ -1,10 +1,34 @@
-
+# Core Flask and API
 flask==2.3.3
 flask-cors==4.0.0
+gunicorn==21.2.0
+
+# Data Science and ML
 scikit-learn==1.3.0
 pandas==2.0.3
 numpy==1.24.3
+scipy==1.11.1
+
+# AI/ML Libraries
+tensorflow==2.13.0
 joblib==1.3.2
+networkx==3.1
+
+# Visualization (for model training and analysis)
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# HTTP and utilities
 requests==2.31.0
 python-dotenv==1.0.0
+
+# Database (for future use)
 pyodbc==4.0.39
+
+# Advanced Weather System Dependencies
+# - scikit-learn: ML modelleri için
+# - pandas/numpy: Veri işleme için
+# - tensorflow: Derin öğrenme modelleri için
+# - joblib: Model kaydetme/yükleme için
+# - networkx: Graf analizi için
+# - flask-cors: CORS desteği için 
