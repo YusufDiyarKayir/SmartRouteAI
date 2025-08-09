@@ -1,0 +1,12 @@
+{
+  "training_date": "2025-07-29T22:47:35.039355",
+  "data_points": 176904,
+  "traffic_model": {
+    "model_type": "RandomForest",
+    "status": "trained"
+  },
+  "route_model": {
+    "model_type": "RandomForest",
+    "status": "trained"
+  }
+}

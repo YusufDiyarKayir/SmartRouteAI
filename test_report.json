@@ -1,0 +1,55 @@
+{
+  "test_timestamp": "2025-08-06 13:55",
+  "duration_seconds": 8.852438,
+  "total_tests": 9,
+  "successful_tests": 9,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "results": {
+    "Backend Sağlık Kontrolü": {
+      "success": true,
+      "message": "Status: healthy",
+      "details": ""
+    },
+    "ML Servisi Sağlık Kontrolü": {
+      "success": true,
+      "message": "Status: healthy",
+      "details": ""
+    },
+    "Model Dosyaları Kontrolü": {
+      "success": true,
+      "message": "8 model dosyası mevcut",
+      "details": ""
+    },
+    "AI Model Yükleme Testi": {
+      "success": true,
+      "message": "ML servisi çalışıyor (status: healthy, models: False)",
+      "details": ""
+    },
+    "Prompt Analizi Testi": {
+      "success": true,
+      "message": "Kaynak: İstanbul, Hedef: Ankara, Hava: ['yağmurlu']",
+      "details": ""
+    },
+    "Hava Durumu Tahmini Testi": {
+      "success": true,
+      "message": "2 tahmin yapıldı",
+      "details": ""
+    },
+    "Rota Optimizasyonu Testi": {
+      "success": true,
+      "message": "2 rota bulundu",
+      "details": ""
+    },
+    "Performans Testi": {
+      "success": true,
+      "message": "Yanıt süresi: 0.33 saniye",
+      "details": ""
+    },
+    "Hata Yönetimi Testi": {
+      "success": true,
+      "message": "Geçersiz istek düzgün işlendi",
+      "details": ""
+    }
+  }
+}
