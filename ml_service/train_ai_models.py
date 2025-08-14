@@ -29,7 +29,7 @@ def weather_code_to_str(code):
 
 def create_training_data():
     """Eğitim verisi oluştur"""
-    print("📊 Eğitim verisi oluşturuluyor...")
+    print(" Eğitim verisi oluşturuluyor...")
     
     training_data = []
     
@@ -183,7 +183,7 @@ def create_training_data():
         
         current_date += timedelta(days=1)
     
-    print(f"✅ {len(training_data)} veri noktası oluşturuldu")
+    print(f" {len(training_data)} veri noktası oluşturuldu")
     return training_data
 
 def check_holiday(date):
@@ -339,7 +339,7 @@ def calculate_safety_score(road_quality, weather_code, highway_ratio):
 
 def train_models():
     """AI modellerini eğit"""
-    print("🤖 AI modelleri eğitiliyor...")
+    print(" AI modelleri eğitiliyor...")
     
     # Eğitim verisi oluştur
     training_data = create_training_data()
@@ -348,20 +348,20 @@ def train_models():
     os.makedirs('../models', exist_ok=True)
     
     # 1. Trafik tahmin modeli eğitimi
-    print("\n📈 Trafik tahmin modeli eğitiliyor...")
+    print("\n Trafik tahmin modeli eğitiliyor...")
     traffic_ai = TrafficPredictionAI()
     traffic_ai.train(training_data)
     traffic_ai.save_model('../models/traffic_prediction')
     
-    print("✅ Trafik modeli eğitildi")
+    print(" Trafik modeli eğitildi")
     
     # 2. Rota optimizasyon modeli eğitimi
-    print("\n🛣️ Rota optimizasyon modeli eğitiliyor...")
+    print("\n Rota optimizasyon modeli eğitiliyor...")
     route_ai = RouteOptimizationAI()
     route_ai.train(training_data)
     route_ai.save_model('../models/route_optimization')
     
-    print("✅ Rota modeli eğitildi")
+    print(" Rota modeli eğitildi")
     
     # Eğitim sonuçlarını kaydet
     training_results = {
@@ -380,14 +380,14 @@ def train_models():
     with open('../models/training_results.json', 'w') as f:
         json.dump(training_results, f, indent=2)
     
-    print("\n🎉 Model eğitimi tamamlandı!")
-    print(f"📊 Eğitim sonuçları: ../models/training_results.json")
+    print("\n Model eğitimi tamamlandı!")
+    print(f" Eğitim sonuçları: ../models/training_results.json")
     
     return training_results
 
 def test_models():
     """Eğitilen modelleri test et"""
-    print("\n🧪 Modeller test ediliyor...")
+    print("\n Modeller test ediliyor...")
     
     # Modelleri yükle
     traffic_ai = TrafficPredictionAI()
@@ -416,7 +416,7 @@ def test_models():
         
         # Trafik tahmini test
         traffic_prediction = traffic_ai.predict_traffic(test_route_info, test_weather_data, test_date)
-        print(f"🚦 Trafik tahmini: {traffic_prediction:.2f}x")
+        print(f" Trafik tahmini: {traffic_prediction:.2f}x")
         
         # Rota optimizasyonu test
         test_traffic_data = {'traffic_multiplier': traffic_prediction}
@@ -426,19 +426,19 @@ def test_models():
             test_route_info, test_weather_data, test_traffic_data, test_user_prefs
         )
         
-        print(f"🛣️ Rota optimizasyonu:")
+        print(f" Rota optimizasyonu:")
         print(f"   - Süre: {optimization['duration']:.1f} dakika")
         print(f"   - Maliyet: {optimization['cost']:.0f} TL")
         print(f"   - Konfor: {optimization['comfort_score']:.2f}")
         print(f"   - Skor: {optimization['optimization_score']:.2f}")
         
-        print("✅ Model testleri başarılı!")
+        print(" Model testleri başarılı!")
         
     except Exception as e:
-        print(f"❌ Model test hatası: {e}")
+        print(f" Model test hatası: {e}")
 
 if __name__ == "__main__":
-    print("🚀 SmartRouteAI - AI Model Training")
+    print(" SmartRouteAI - AI Model Training")
     print("=" * 50)
     
     try:
@@ -448,8 +448,8 @@ if __name__ == "__main__":
         # Test et
         test_models()
         
-        print("\n🎯 Eğitim tamamlandı! Modeller kullanıma hazır.")
+        print("\n Eğitim tamamlandı! Modeller kullanıma hazır.")
         
     except Exception as e:
-        print(f"❌ Eğitim hatası: {e}")
+        print(f" Eğitim hatası: {e}")
         sys.exit(1) 

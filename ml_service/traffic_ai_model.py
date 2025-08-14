@@ -31,7 +31,7 @@ class TrafficPredictionAI:
     
     def train(self, training_data):
         """Modeli eğit"""
-        print("🤖 Trafik tahmin modeli eğitiliyor...")
+        print(" Trafik tahmin modeli eğitiliyor...")
         
         # Veri hazırlama
         data = pd.DataFrame(training_data)
@@ -48,7 +48,7 @@ class TrafficPredictionAI:
         X, y = self.create_sequences(data)
         
         if len(X) == 0:
-            print("⚠️ Yeterli veri yok, fallback model kullanılıyor")
+            print(" Yeterli veri yok, fallback model kullanılıyor")
             return self
         
         # Veriyi böl
@@ -68,7 +68,7 @@ class TrafficPredictionAI:
         self.is_trained = True
         self.history = {'loss': [1 - test_score]}
         
-        print(f"✅ Model eğitildi! Train Score: {train_score:.3f}, Test Score: {test_score:.3f}")
+        print(f" Model eğitildi! Train Score: {train_score:.3f}, Test Score: {test_score:.3f}")
         return self
     
     def predict_traffic(self, route_info, weather_data, date_time):
@@ -148,7 +148,7 @@ class TrafficPredictionAI:
             with open(f"{filepath}_metadata.json", 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2, ensure_ascii=False)
             
-            print(f"💾 Model kaydedildi: {filepath}")
+            print(f" Model kaydedildi: {filepath}")
             
         except Exception as e:
             print(f"Model kaydetme hatası: {e}")
@@ -166,7 +166,7 @@ class TrafficPredictionAI:
                     metadata = json.load(f)
                     self.is_trained = metadata.get('is_trained', False)
             
-            print(f"📁 Model yüklendi: {filepath}")
+            print(f" Model yüklendi: {filepath}")
             return True
             
         except Exception as e:
@@ -175,7 +175,7 @@ class TrafficPredictionAI:
 
 if __name__ == "__main__":
     # Test kodu
-    print("🚀 Trafik AI Model Test Ediliyor...")
+    print(" Trafik AI Model Test Ediliyor...")
     
     # Örnek veri oluştur
     test_data = []
@@ -196,5 +196,5 @@ if __name__ == "__main__":
     test_time = datetime.now()
     prediction = traffic_ai.predict_traffic({}, test_weather, test_time)
     
-    print(f"🎯 Test tahmini: {prediction:.2f}")
-    print("✅ Test tamamlandı!") 
+    print(f" Test tahmini: {prediction:.2f}")
+    print(" Test tamamlandı!") 

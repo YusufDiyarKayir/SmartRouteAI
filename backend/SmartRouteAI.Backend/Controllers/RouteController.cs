@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Services;
+using SmartRouteAI.Backend.Models;
 
 namespace SmartRouteAI.Backend.Controllers
 {
@@ -24,7 +25,7 @@ namespace SmartRouteAI.Backend.Controllers
 
         }
 
-        [HttpGet("health")]
+        [HttpGet("health")]// Sağlık kontrolü endpoint'i
         public IActionResult Health() //Sağlık kontrolü
         {
             return Ok(new { status = "healthy", timestamp = DateTime.UtcNow }); //Sağlık kontrolü
@@ -325,12 +326,190 @@ namespace SmartRouteAI.Backend.Controllers
                 return BadRequest(new { error = "Rota planlama sırasında hata oluştu" });
             }
         }
-    }
 
-    public class PromptRequest
-    {
-        public string Prompt { get; set; } = string.Empty;
-    }
+        [HttpPost("estimate")]
+        public async Task<IActionResult> GetRouteEstimate([FromBody] RouteRequest request)
+        {
+            // Koordinatlar ve zaman bilgileri alınıyor
+            double fromLat = request.FromLat; 
+            double fromLng = request.FromLng;
+            double toLat = request.ToLat;
+            double toLng = request.ToLng;
+            string date = request.Date;
+            string time = request.Time;
 
+            var dt = DateTime.Parse($"{date}T{time}"); // Tarih + saat birleştiriliyor
+            var epoch = ((DateTimeOffset)dt).ToUnixTimeSeconds(); // UNIX zamanına çevrilir
+
+            // 1. Tatil kontrolü: Abstract API kullanılarak
+            bool isHoliday = false; // Tatil kontrolü
+            try {
+                using var http = new HttpClient(); // HTTP isteği oluşturuluyor
+                string holidayApiKey = Environment.GetEnvironmentVariable("HOLIDAY_API_KEY") ?? "";
+                string holidayUrl = $"https://holidays.abstractapi.com/v1/?api_key={holidayApiKey}&country=TR&year={dt.Year}&month={dt.Month}&day={dt.Day}";
+                var holidayResp = await http.GetStringAsync(holidayUrl); // Abstract API'den gelen yanıt
+                isHoliday = !string.IsNullOrWhiteSpace(holidayResp) && holidayResp != "[]"; // Yanıt boş değilse ve [] değilse tatil kontrolü
+            } catch { } // Hata olursa tatil kontrolü yapılmaz
+
+            // 2. Hava durumu bilgisi: OpenWeatherMap API üzerinden
+            string weather = "Sunny";
+            string weatherDesc = ""; // Hava durumu açıklaması
+            try {
+                using var http = new HttpClient(); // HTTP isteği oluşturuluyor
+                string weatherApiKey = Environment.GetEnvironmentVariable("OPENWEATHER_API_KEY") ?? ""; // OpenWeatherMap API anahtarı
+                string forecastUrl = $"https://api.openweathermap.org/data/2.5/forecast?lat={fromLat}&lon={fromLng}&appid={weatherApiKey}&lang=tr&units=metric"; // OpenWeatherMap API URL'si
+                var forecastResp = await http.GetFromJsonAsync<OpenWeatherForecastResponse>(forecastUrl); // OpenWeatherMap API'den gelen yanıt
+                if (forecastResp != null && forecastResp.list.Length > 0) {
+                    // En yakın tarihli hava verisi seçiliyor
+                    var closest = forecastResp.list.OrderBy(x => Math.Abs((DateTimeOffset.FromUnixTimeSeconds(x.dt).DateTime - dt).TotalMinutes)).First();
+                    var main = closest.weather[0].main.ToLower();
+                    weatherDesc = closest.weather[0].description;
+
+                    // Hava durumu sınıflandırması yapılıyor
+                    if (main.Contains("rain")) weather = "Rainy";
+                    else if (main.Contains("snow")) weather = "Snowy";
+                    else if (main.Contains("cloud")) weather = "Cloudy";
+                    else weather = "Sunny";
+                }
+            } catch { }
+
+            // 3. Trafik yoğunluğu tahmini
+            string trafficLevel = "Low";
+            int hour = dt.Hour;
+            var dayOfWeek = dt.DayOfWeek;
+            if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday) {
+                trafficLevel = "Low"; // Hafta sonu düşük
+            } else if (hour >= 7 && hour <= 10) trafficLevel = "High"; // Sabah yoğun saatler
+            else if (hour >= 17 && hour <= 20) trafficLevel = "High"; // Akşam yoğun saatler
+            else if (hour >= 11 && hour <= 16) trafficLevel = "Medium"; // Orta yoğunluk
+
+            // 4. Google Directions API üzerinden güzergahlar alınıyor
+            string googleApiKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY") ?? "";
+            string googleUrl = $"https://maps.googleapis.com/maps/api/directions/json?origin={fromLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{fromLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}&destination={toLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{toLng.ToString(System.Globalization.CultureInfo.InvariantCulture)}&departure_time={epoch}&alternatives=true&key={googleApiKey}";
+            
+            Console.WriteLine("[GOOGLE URL] " + googleUrl); // Konsola URL yazdır
+
+            var routes = new List<object>(); // Rota listesi
+
+            try
+            {
+                using var http = new HttpClient();
+                var googleResp = await http.GetStringAsync(googleUrl);
+                Console.WriteLine("[GOOGLE RESP] " + googleResp);
+
+                var googleObj = System.Text.Json.JsonSerializer.Deserialize<GoogleDirectionsResponse>(googleResp);
+                if (googleObj != null && googleObj.routes.Length > 0)
+                {
+                    // En hızlı ve en az ücretli rota seçimi
+                    int minDurationIdx = 0; // En hızlı rota indeksi
+                    int minTollIdx = 0; // En az ücretli rota indeksi
+                    int minDuration = int.MaxValue; // En hızlı rota süresi
+                    int minToll = int.MaxValue; // En az ücretli rota ücreti
+
+                    // Güzergahları kontrol et
+                    for (int i = 0; i < googleObj.routes.Length; i++) // Güzergahları kontrol et
+                    {
+                        var r = googleObj.routes[i]; // Güzergah
+                        var leg = r.legs[0]; // Güzergahın ilk adımı
+                        double durationMin = leg.duration_in_traffic != null ? leg.duration_in_traffic.value / 60.0 : leg.duration.value / 60.0; // Güzergahın süresi
+                        int tollCount = 0; // Ücretli geçiş sayısı
+
+                        if (leg.steps != null) // Adımlar varsa
+                        {
+                            foreach (var step in leg.steps) // Adımları kontrol et
+                            {
+                                if (step.html_instructions != null && (step.html_instructions.ToLower().Contains("toll") || step.html_instructions.ToLower().Contains("ücretli"))) // Ücretli geçiş varsa
+                                    tollCount++; // Ücretli geçiş sayısını artır
+                            }
+                        }
+
+                        if (durationMin < minDuration) { minDuration = (int)durationMin; minDurationIdx = i; }
+                        if (tollCount < minToll) { minToll = tollCount; minTollIdx = i; }
+                    }
+
+                    // Güzergahları listeye ekle
+                    for (int i = 0; i < googleObj.routes.Length; i++)
+                    {
+                        var r = googleObj.routes[i];
+                        var leg = r.legs[0];
+                        double distanceKm = leg.distance.value / 1000.0;
+                        double durationMin = leg.duration_in_traffic != null ? leg.duration_in_traffic.value / 60.0 : leg.duration.value / 60.0;
+                        string polyline = r.overview_polyline.points;
+
+                        int tollCount = 0;
+                        if (leg.steps != null)
+                        {
+                            foreach (var step in leg.steps)
+                            {
+                                if (step.html_instructions != null)
+                                {
+                                    var instruction = step.html_instructions.ToLower();
+                                    if (instruction.Contains("toll") || 
+                                        instruction.Contains("ücretli") || 
+                                        instruction.Contains("otoyol") ||
+                                        instruction.Contains("highway") ||
+                                        instruction.Contains("motorway") ||
+                                        instruction.Contains("expressway") ||
+                                        instruction.Contains("otoban") ||
+                                        instruction.Contains("geçiş") ||
+                                        instruction.Contains("köprü") ||
+                                        instruction.Contains("tünel"))
+                                    {
+                                        tollCount++;
+                                    }
+                                }
+                            }
+                        }
+
+                        string tollClass = "Ücretsiz";
+                        if (tollCount == 1 || tollCount == 2) tollClass = "Orta";
+                        else if (tollCount >= 3) tollClass = "Yüksek";
+                        string tollInfo = tollCount == 0 ? "Ücretsiz rota" : $"Tahmini {tollCount} adet ücretli geçiş olabilir.";
+                        
+
+                        string title = $"Alternatif {i+1}";
+                        if (i == minDurationIdx) title += " - En hızlı";
+                        if (i == minTollIdx) title += " - En düşük maliyetli";
+                        if (tollCount == 0) title += " - Ücretsiz";
+
+                        var arrival = dt.AddMinutes(durationMin);
+                        string arrivalStr = arrival.ToString("dd MMMM yyyy HH:mm", new System.Globalization.CultureInfo("tr-TR"));
+
+                        var routeData = new {
+                            title,
+                            distanceKm = Math.Round(distanceKm, 2),
+                            estimatedDurationMinutes = Math.Round(durationMin, 1),
+                            polyline,
+                            tollClass,
+                            tollCount,
+                            tollInfo,
+                            arrivalStr,
+                            weatherDesc
+                        };
+                        
+
+                        routes.Add(routeData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Hata olursa varsayılan rota döndür
+                routes.Clear();
+                routes.Add(new { title = "Hata", distanceKm = 0, estimatedDurationMinutes = 0, polyline = "", tollClass = "-", error = ex.Message });
+            }
+
+            // Sonuçlar JSON olarak döndürülüyor
+            return Ok(new
+            {
+                routes,
+                date,
+                time,
+                isHoliday,
+                weather,
+                trafficLevel
+            });
+        }
+    }
 
 } 

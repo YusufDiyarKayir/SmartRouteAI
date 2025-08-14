@@ -36,7 +36,7 @@ class RouteOptimizationAI:
     
     def train(self, training_data):
         """Modeli eğit"""
-        print("🤖 Rota optimizasyon modeli eğitiliyor...")
+        print(" Rota optimizasyon modeli eğitiliyor...")
         
         # Veri hazırlama
         data = pd.DataFrame(training_data)
@@ -78,7 +78,7 @@ class RouteOptimizationAI:
         self.is_trained = True
         self.history = {'loss': [1 - (duration_score + cost_score + comfort_score) / 3]}
         
-        print(f"✅ Model eğitildi! Duration: {duration_score:.3f}, Cost: {cost_score:.3f}, Comfort: {comfort_score:.3f}")
+        print(f" Model eğitildi! Duration: {duration_score:.3f}, Cost: {cost_score:.3f}, Comfort: {comfort_score:.3f}")
         return self
     
     def optimize_route(self, route_info, weather_data, traffic_data, user_preferences):
@@ -224,7 +224,7 @@ class RouteOptimizationAI:
             with open(f"{filepath}_metadata.json", 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2, ensure_ascii=False)
             
-            print(f"💾 Model kaydedildi: {filepath}")
+            print(f" Model kaydedildi: {filepath}")
             
         except Exception as e:
             print(f"Model kaydetme hatası: {e}")
@@ -244,7 +244,7 @@ class RouteOptimizationAI:
                     metadata = json.load(f)
                     self.is_trained = metadata.get('is_trained', False)
             
-            print(f"📁 Model yüklendi: {filepath}")
+            print(f" Model yüklendi: {filepath}")
             return True
             
         except Exception as e:
@@ -253,7 +253,7 @@ class RouteOptimizationAI:
 
 if __name__ == "__main__":
     # Test kodu
-    print("🚀 Rota Optimizasyon AI Model Test Ediliyor...")
+    print(" Rota Optimizasyon AI Model Test Ediliyor...")
     
     # Örnek veri oluştur
     test_data = []
@@ -280,9 +280,9 @@ if __name__ == "__main__":
     
     optimization = route_ai.optimize_route(test_route, test_weather, test_traffic, test_preferences)
     
-    print(f"🎯 Test optimizasyonu:")
+    print(f" Test optimizasyonu:")
     print(f"   Süre: {optimization['duration']:.1f} dakika")
     print(f"   Maliyet: {optimization['cost']:.1f} TL")
     print(f"   Konfor: {optimization['comfort_score']:.2f}")
     print(f"   Skor: {optimization['optimization_score']:.2f}")
-    print("✅ Test tamamlandı!") 
+    print(" Test tamamlandı!") 

@@ -7,8 +7,8 @@ import random
 class AdvancedWeatherPredictor:
     def __init__(self):
         self.db = MLWeatherDatabase() #MLWeatherDatabase sınıfından bir örnek oluştur
-        print("🌤️ ML Tabanlı Hava Durumu Tahmin Sistemi Başlatıldı")
-        print(f"📊 {len(self.db.cities_data)} şehir için ML modelleri hazır")
+        print(" ML Tabanlı Hava Durumu Tahmin Sistemi Başlatıldı")
+        print(f" {len(self.db.cities_data)} şehir için ML modelleri hazır")
     
     #Rota üzerindeki tüm şehirler için gelişmiş hava durumu tahmini
     def predict_route_weather(self, cities: List[str], date_str: str, user_weather_conditions: List[str] = None) -> Dict:
@@ -59,7 +59,7 @@ class AdvancedWeatherPredictor:
                         
                         # Eğer veri yoksa uyarı ver
                         if predicted_weather == "veri_yok":
-                            print(f"[ML] ⚠️ {city} için gerçek tarihsel veri bulunamadı!")
+                            print(f"[ML] {city} için gerçek tarihsel veri bulunamadı!")
                             predicted_weather = "veri_yok"
                             confidence = 0.0
                             avg_temperature = 0.0
@@ -453,9 +453,9 @@ def calculate_route_cost():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    print("🚀 ML Tabanlı Hava Durumu Tahmin API'si başlatılıyor...")
-    print("📍 Port: 5001")
-    print("🔗 Endpoints:")
+    print(" ML Tabanlı Hava Durumu Tahmin API'si başlatılıyor...")
+    print(" Port: 5001")
+    print(" Endpoints:")
     print("  - GET  /health")
     print("  - POST /predict_route")
     print("  - POST /route_recommendations")
